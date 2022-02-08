@@ -1,16 +1,5 @@
 # Release History
 
-## 12.15.0-beta.3 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
-- Fixed a bug in builders that would cause container or blobName to be erased if specified before the connection string.
-
-### Other Changes
-
 ## 12.14.3 (2022-01-14)
 
 ### Other Changes

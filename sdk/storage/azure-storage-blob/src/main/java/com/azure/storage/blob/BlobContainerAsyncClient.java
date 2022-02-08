@@ -85,19 +85,10 @@ import static com.azure.storage.common.Utility.STORAGE_TRACING_NAMESPACE_VALUE;
  */
 @ServiceClient(builder = BlobContainerClientBuilder.class, isAsync = true)
 public final class BlobContainerAsyncClient {
-    /**
-     * Special container name for the root container in the Storage account.
-     */
     public static final String ROOT_CONTAINER_NAME = "$root";
 
-    /**
-     * Special container name for the static website container in the Storage account.
-     */
     public static final String STATIC_WEBSITE_CONTAINER_NAME = "$web";
 
-    /**
-     * Special container name for the logs container in the Storage account.
-     */
     public static final String LOG_CONTAINER_NAME = "$logs";
 
     private final ClientLogger logger = new ClientLogger(BlobContainerAsyncClient.class);
@@ -1223,8 +1214,7 @@ public final class BlobContainerAsyncClient {
                         : Stream.concat(
                         response.getValue().getSegment().getBlobItems().stream().map(ModelHelper::populateBlobItem),
                         response.getValue().getSegment().getBlobPrefixes().stream()
-                            .map(blobPrefix -> new BlobItem()
-                                .setName(ModelHelper.toBlobNameString(blobPrefix.getName())).setIsPrefix(true))
+                            .map(blobPrefix -> new BlobItem().setName(blobPrefix.getName()).setIsPrefix(true))
                     ).collect(Collectors.toList());
 
                     return new PagedResponseBase<>(
