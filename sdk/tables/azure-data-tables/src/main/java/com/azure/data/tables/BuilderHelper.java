@@ -20,7 +20,6 @@ import com.azure.core.http.policy.HttpLoggingPolicy;
 import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.http.policy.HttpPolicyProviders;
 import com.azure.core.http.policy.RequestIdPolicy;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.util.ClientOptions;
@@ -50,21 +49,14 @@ final class BuilderHelper {
 
     static HttpPipeline buildPipeline(AzureNamedKeyCredential azureNamedKeyCredential,
                                       AzureSasCredential azureSasCredential, TokenCredential tokenCredential,
-                                      String sasToken, String endpoint,
-                                      RetryPolicy retryPolicy, RetryOptions retryOptions,
+                                      String sasToken, String endpoint, RetryPolicy retryPolicy,
                                       HttpLogOptions logOptions, ClientOptions clientOptions, HttpClient httpClient,
                                       List<HttpPipelinePolicy> perCallAdditionalPolicies,
                                       List<HttpPipelinePolicy> perRetryAdditionalPolicies, Configuration configuration,
                                       ClientLogger logger) {
         configuration = (configuration == null) ? Configuration.getGlobalConfiguration() : configuration;
+        retryPolicy = (retryPolicy == null) ? new RetryPolicy() : retryPolicy;
         logOptions = (logOptions == null) ? new HttpLogOptions() : logOptions;
-
-        if (retryPolicy != null && retryOptions != null) {
-            throw logger.logExceptionAsWarning(
-                new IllegalStateException("'retryPolicy' and 'retryOptions' cannot both be set"));
-        } else if (retryPolicy == null) {
-            retryPolicy = retryOptions == null ? new RetryPolicy() : new RetryPolicy(retryOptions);
-        }
 
         // Closest to API goes first, closest to wire goes last.
         List<HttpPipelinePolicy> policies = new ArrayList<>();
