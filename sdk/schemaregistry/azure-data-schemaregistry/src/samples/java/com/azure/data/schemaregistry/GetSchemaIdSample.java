@@ -5,13 +5,12 @@ package com.azure.data.schemaregistry;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.data.schemaregistry.models.SchemaFormat;
-import com.azure.data.schemaregistry.models.SchemaProperties;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
- * Sample to demonstrate retrieving properties of a schema from Schema Registry.
- *
- * @see GetSchemaIdSampleAsync for the async sample.
+ * Sample to demonstrate retrieving the schema id of a schema from Schema Registry.
  */
 public class GetSchemaIdSample {
 
@@ -19,18 +18,25 @@ public class GetSchemaIdSample {
      * The main method to run this program.
      * @param args Ignored args.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         TokenCredential tokenCredential = new DefaultAzureCredentialBuilder().build();
 
-        SchemaRegistryClient schemaRegistryClient = new SchemaRegistryClientBuilder()
+        SchemaRegistryAsyncClient schemaRegistryAsyncClient = new SchemaRegistryClientBuilder()
             .fullyQualifiedNamespace("{schema-registry-endpoint")
             .credential(tokenCredential)
-            .buildClient();
+            .buildAsyncClient();
 
-        // Gets the properties of an existing schema.
-        SchemaProperties schemaProperties = schemaRegistryClient
-            .getSchemaProperties("{group-name}", "{schema-name}", "{schema-string}", SchemaFormat.AVRO);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        // Register a schema
+        schemaRegistryAsyncClient
+            .getSchemaProperties("{group-name}", "{schema-name}", "{schema-string}", SchemaFormat.AVRO)
+            .subscribe(schemaId -> {
+                System.out.println("Successfully retrieved the schema id: " + schemaId);
+                countDownLatch.countDown();
+            });
 
-        System.out.println("Successfully retrieved the schema id: " + schemaProperties.getId());
+        // wait for the async task to complete
+        countDownLatch.await();
+
     }
 }

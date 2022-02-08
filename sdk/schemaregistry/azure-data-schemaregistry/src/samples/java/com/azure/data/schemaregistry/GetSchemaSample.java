@@ -4,31 +4,38 @@
 package com.azure.data.schemaregistry;
 
 import com.azure.core.credential.TokenCredential;
-import com.azure.data.schemaregistry.models.SchemaRegistrySchema;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
- * Sample to demonstrate retrieving a schema from Schema Registry using the sync client.
+ * Sample to demonstrate retrieving a schema from Schema Registry.
  */
 public class GetSchemaSample {
     /**
      * The main method to run this program.
-     *
      * @param args Ignored args.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         TokenCredential tokenCredential = new DefaultAzureCredentialBuilder().build();
 
-        SchemaRegistryClient client = new SchemaRegistryClientBuilder()
+        SchemaRegistryAsyncClient schemaRegistryAsyncClient = new SchemaRegistryClientBuilder()
             .fullyQualifiedNamespace("{schema-registry-endpoint")
             .credential(tokenCredential)
-            .buildClient();
+            .buildAsyncClient();
 
-        // Get a schema using its id. The schema id is generated when it is registered via the client or Azure Portal.
-        SchemaRegistrySchema schema = client.getSchema("{schema-id}");
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        // Register a schema
+        schemaRegistryAsyncClient
+            .getSchema("{schema-id}")
+            .subscribe(schema -> {
+                System.out.println("Successfully retrieved schema.");
+                System.out.printf("Id: %s%nContents: %s%n", schema.getProperties().getId(), schema.getDefinition());
 
-        System.out.println("Successfully retrieved schema.");
-        System.out.printf("Id: %s%nContents: %s%n", schema.getProperties().getId(), schema.getDefinition());
+                countDownLatch.countDown();
+            });
 
+        // wait for the async task to complete
+        countDownLatch.await();
     }
 }

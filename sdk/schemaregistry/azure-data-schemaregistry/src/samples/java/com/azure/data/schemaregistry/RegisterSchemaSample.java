@@ -5,31 +5,36 @@ package com.azure.data.schemaregistry;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.data.schemaregistry.models.SchemaFormat;
-import com.azure.data.schemaregistry.models.SchemaProperties;
 import com.azure.identity.DefaultAzureCredentialBuilder;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Sample to demonstrate registering a schema with Schema Registry.
- *
- * @see RegisterSchemaSampleAsync for the async sample.
  */
 public class RegisterSchemaSample {
     /**
      * The main method to run this program.
      * @param args Ignored args.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         TokenCredential tokenCredential = new DefaultAzureCredentialBuilder().build();
 
-        SchemaRegistryClient client = new SchemaRegistryClientBuilder()
+        SchemaRegistryAsyncClient schemaRegistryAsyncClient = new SchemaRegistryClientBuilder()
             .fullyQualifiedNamespace("{schema-registry-endpoint}")
             .credential(tokenCredential)
-            .buildClient();
+            .buildAsyncClient();
 
+        CountDownLatch countDownLatch = new CountDownLatch(1);
         // Register a schema
-        SchemaProperties schemaProperties = client
-            .registerSchema("{group-name}", "{schema-name}", "{schema-string}", SchemaFormat.AVRO);
+        schemaRegistryAsyncClient
+            .registerSchema("{group-name}", "{schema-name}", "{schema-string}", SchemaFormat.AVRO)
+            .subscribe(schemaProperties -> {
+                System.out.println("Successfully registered a schema with id " + schemaProperties.getId());
+                countDownLatch.countDown();
+            });
 
-        System.out.println("Successfully registered a schema with id " + schemaProperties.getId());
+        // wait for the async task to complete
+        countDownLatch.await();
     }
 }
