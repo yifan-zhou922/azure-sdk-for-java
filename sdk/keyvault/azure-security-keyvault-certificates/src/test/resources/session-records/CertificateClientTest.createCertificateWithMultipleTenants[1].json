@@ -1,7 +1,7 @@
 {
   "networkCallRecords" : [ {
     "Method" : "POST",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/create?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/create?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -22,13 +22,13 @@
       "x-ms-keyvault-service-version" : "1.9.150.1",
       "Body" : "{\"id\":\"https://azure-kv-tests2.vault.azure.net/certificates/testCer/pending\",\"issuer\":{\"name\":\"Self\"},\"csr\":\"MIICqDCCAZACAQAwGDEWMBQGA1UEAxMNRGVmYXVsdFBvbGljeTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK2J4NS1FVJ742QE0OvJ3SB644BCLW5W5z21o4O+Q0Q2HLIEOz1hLiMZGCV7qrptrJSm9uOXUVF/sOMI5oMChETENTU2NSmZRy3AAPqfN36rRWJaEIAScqXZsuc3VR3FKtoNexsC5CObf5YgaxzH6aKD3csfHBAxguo6sfOjZy3NdcpTXBgVvHFK+2gTmzINpl+7OXHbIuZpjUZIdfgNA+mAw+iTNPxTQ36oBQ2ZqX+fCUGvQcXks27mg4BrNYidY22i7i+WDeL003KQbkJPRWPWoZQGzTnZdELk6WmOYQ8Le7c0aPvorOmKTlisdMCjtYFwGltSktzdmlC2R904eskCAwEAAaBLMEkGCSqGSIb3DQEJDjE8MDowDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAJBgNVHRMEAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQCCQprJ/3Hm9UGDIMkCOn2ufOF2UOGg3HV+eZjAwbficGCiTT7Hwd02gqpG0mERira+r5payrRxIcAYOhpksfAdcu8mpX7w4x25wXZ4qLvTVPp3sjbpvwV/jfZ2uIWUJlpmZvjs7mtqI5OI43TWFuh7rWX86W/AvmyDSlqAj9ybHn63Vi9poPnbH1Fvv4TLxfgSBz5o74/L5lf9Qyg/dwr6Nm/mkly4M3xw3oPBh1LrPki57F/fKPOy9yTOLhwjAikEDwQlQ3D8LIKI0qs/knXh2NvigcD0P+AsZO5rCflz1dxWrPPg8G8v9X/1d6MQNnV27ximm7tvGXEQnFOyN/XI\",\"cancellation_requested\":false,\"status\":\"inProgress\",\"status_details\":\"Pending certificate created. Certificate request is in progress. This may take some time based on the issuer provider. Please check again later.\",\"request_id\":\"37868c5282584377bd64a7d86be58c1f\"}",
       "Content-Type" : "application/json; charset=utf-8",
-      "Location" : "https://azure-kv-tests2.vault.azure.net/certificates/testCer/pending?api-version=7.3-preview&request_id=37868c5282584377bd64a7d86be58c1f",
+      "Location" : "https://azure-kv-tests2.vault.azure.net/certificates/testCer/pending?api-version=7.2&request_id=37868c5282584377bd64a7d86be58c1f",
       "X-Powered-By" : "ASP.NET"
     },
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -54,7 +54,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -80,7 +80,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer/?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -106,7 +106,7 @@
     "Exception" : null
   }, {
     "Method" : "POST",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/create?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/create?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -127,13 +127,13 @@
       "x-ms-keyvault-service-version" : "1.9.150.1",
       "Body" : "{\"id\":\"https://azure-kv-tests2.vault.azure.net/certificates/testCer2/pending\",\"issuer\":{\"name\":\"Self\"},\"csr\":\"MIICqDCCAZACAQAwGDEWMBQGA1UEAxMNRGVmYXVsdFBvbGljeTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALGIiivBO0CSjQRtIU8+2Gks6Cm9ue434gURERkMSMwd89e2e7z66KozzBwFjjOcq4YXzX1L501DAlVhJCKRESoLeKheo2xl6UtHeaSwCDOfbEKtypsNLF9Tfv8wUXWssRk8nutaj2vVuRmTIagCsuSZOT87LV0lbnuAVhP+OL6Wtd/fVt3ejJvS7IKzbahZSZnAxcBbe0z4bjoRmpknUYVy7bzP1+otQ9o6cclNZ3vaMAEAKkIVZ5oz4LhFvBwg6UfL/3xRJ0pAjU/2SDXvKnb4VrblCiiy4gFxDYIe+H4R18uxRaiUmyH8T4oZTfGNOpRzJG5Ef+bHPmre53WqzLkCAwEAAaBLMEkGCSqGSIb3DQEJDjE8MDowDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAJBgNVHRMEAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQAYxUsZaMXQrxJuVZQOaozqifZNRUxfcTf7PZy0OxUU97jpYsSpN6/4knNIlWUUSoMdgDTHq7dko9Nb+bM/Y0oqEAHC76i0iz4xhzL4wYAFdye+mVvJ+O3F0yCTkfLez058xPMX48WCAK+v/St2K5l3DH9AU/0zbtmDmZBQXHI3t12jt+vLlNspYcBAXwqXHITD07b+BaI0FaqVKFzuNhleUiGfK1RU4mdCnGO5y4R2LvAJ3fVwIsQf/0kQ00Y4D3MSSXoQNLqDKwcBKgQZXUs7W851e1C2Hl0ol82xjHWMqiEpWe29MNUdsPAhUe/RiEzJ4x+KcgHJURl6OWQBw7NE\",\"cancellation_requested\":false,\"status\":\"inProgress\",\"status_details\":\"Pending certificate created. Certificate request is in progress. This may take some time based on the issuer provider. Please check again later.\",\"request_id\":\"464b0ce5145241528af7520bbf10a6f8\"}",
       "Content-Type" : "application/json; charset=utf-8",
-      "Location" : "https://azure-kv-tests2.vault.azure.net/certificates/testCer2/pending?api-version=7.3-preview&request_id=464b0ce5145241528af7520bbf10a6f8",
+      "Location" : "https://azure-kv-tests2.vault.azure.net/certificates/testCer2/pending?api-version=7.2&request_id=464b0ce5145241528af7520bbf10a6f8",
       "X-Powered-By" : "ASP.NET"
     },
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -159,7 +159,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -185,7 +185,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -211,7 +211,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -237,7 +237,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.vault.azure.net/certificates/testCer2/?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
