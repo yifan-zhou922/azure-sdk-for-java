@@ -54,7 +54,6 @@ public class EventData {
      */
     static final Set<String> RESERVED_SYSTEM_PROPERTIES;
 
-    private static final ClientLogger LOGGER = new ClientLogger(EventData.class);
     private final Map<String, Object> properties;
     private final SystemProperties systemProperties;
     private final AmqpAnnotatedMessage annotatedMessage;
@@ -141,11 +140,11 @@ public class EventData {
                 break;
             case SEQUENCE:
             case VALUE:
-                LOGGER.warning("Message body type '{}' is not supported in EH. "
+                new ClientLogger(EventData.class).warning("Message body type '{}' is not supported in EH. "
                     + " Getting contents of body may throw.", annotatedMessage.getBody().getBodyType());
                 break;
             default:
-                throw LOGGER.logExceptionAsError(new IllegalArgumentException(
+                throw new ClientLogger(EventData.class).logExceptionAsError(new IllegalArgumentException(
                     "Body type not valid " + annotatedMessage.getBody().getBodyType()));
         }
     }

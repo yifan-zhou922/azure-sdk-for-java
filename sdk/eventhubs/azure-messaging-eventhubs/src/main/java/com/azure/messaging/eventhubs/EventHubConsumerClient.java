@@ -21,8 +21,6 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.azure.messaging.eventhubs.implementation.ClientConstants.PARTITION_ID_KEY;
-
 /**
  * A <b>synchronous</b> consumer responsible for reading {@link EventData} from an Event Hub partition in the context of
  * a specific consumer group.
@@ -289,10 +287,7 @@ public class EventHubConsumerClient implements Closeable {
         final SynchronousReceiveWork work = new SynchronousReceiveWork(id, maximumMessageCount, maximumWaitTime,
             emitter);
         final SynchronousEventSubscriber syncSubscriber = new SynchronousEventSubscriber(work);
-        logger.atInfo()
-            .addKeyValue(PARTITION_ID_KEY, partitionId)
-            .log("Started synchronous event subscriber.");
-
+        logger.info("Started synchronous event subscriber for partition '{}'.", partitionId);
         consumer.receiveFromPartition(partitionId, startingPosition, receiveOptions).subscribeWith(syncSubscriber);
     }
 }

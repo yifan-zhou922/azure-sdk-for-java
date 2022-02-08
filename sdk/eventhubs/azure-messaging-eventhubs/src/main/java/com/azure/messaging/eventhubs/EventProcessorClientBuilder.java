@@ -6,14 +6,8 @@ package com.azure.messaging.eventhubs;
 import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.core.amqp.AmqpTransportType;
 import com.azure.core.amqp.ProxyOptions;
-import com.azure.core.amqp.client.traits.AmqpTrait;
 import com.azure.core.amqp.implementation.TracerProvider;
 import com.azure.core.annotation.ServiceClientBuilder;
-import com.azure.core.client.traits.AzureNamedKeyCredentialTrait;
-import com.azure.core.client.traits.AzureSasCredentialTrait;
-import com.azure.core.client.traits.ConfigurationTrait;
-import com.azure.core.client.traits.ConnectionStringTrait;
-import com.azure.core.client.traits.TokenCredentialTrait;
 import com.azure.core.credential.AzureNamedKeyCredential;
 import com.azure.core.credential.AzureSasCredential;
 import com.azure.core.credential.TokenCredential;
@@ -102,13 +96,7 @@ import java.util.function.Supplier;
  * @see EventHubConsumerAsyncClient
  */
 @ServiceClientBuilder(serviceClients = EventProcessorClient.class)
-public class EventProcessorClientBuilder implements
-    TokenCredentialTrait<EventProcessorClientBuilder>,
-    AzureNamedKeyCredentialTrait<EventProcessorClientBuilder>,
-    ConnectionStringTrait<EventProcessorClientBuilder>,
-    AzureSasCredentialTrait<EventProcessorClientBuilder>,
-    AmqpTrait<EventProcessorClientBuilder>,
-    ConfigurationTrait<EventProcessorClientBuilder> {
+public class EventProcessorClientBuilder {
     /**
      * Default load balancing update interval.
      */
@@ -144,35 +132,6 @@ public class EventProcessorClientBuilder implements
     }
 
     /**
-     * Sets the fully qualified name for the Event Hubs namespace.
-     *
-     * @param fullyQualifiedNamespace The fully qualified name for the Event Hubs namespace. This is likely to be
-     *     similar to <strong>{@literal "{your-namespace}.servicebus.windows.net}"</strong>.
-     *
-     * @return The updated {@link EventProcessorClientBuilder} object.
-     * @throws IllegalArgumentException if {@code fullyQualifiedNamespace} is an empty string.
-     * @throws NullPointerException if {@code fullyQualifiedNamespace} is null.
-     */
-    public EventProcessorClientBuilder fullyQualifiedNamespace(String fullyQualifiedNamespace) {
-        eventHubClientBuilder.fullyQualifiedNamespace(fullyQualifiedNamespace);
-        return this;
-    }
-
-    /**
-     * Sets the name of the Event Hub to connect the client to.
-     *
-     * @param eventHubName The name of the Event Hub to connect the client to.
-
-     * @return The updated {@link EventProcessorClientBuilder} object.
-     * @throws IllegalArgumentException if {@code eventHubName} is an empty string.
-     * @throws NullPointerException if {@code eventHubName} is null.
-     */
-    public EventProcessorClientBuilder eventHubName(String eventHubName) {
-        eventHubClientBuilder.eventHubName(eventHubName);
-        return this;
-    }
-
-    /**
      * Sets the credential information given a connection string to the Event Hub instance.
      *
      * <p>
@@ -195,7 +154,6 @@ public class EventProcessorClientBuilder implements
      * @throws AzureException If the shared access signature token credential could not be created using the connection
      * string.
      */
-    @Override
     public EventProcessorClientBuilder connectionString(String connectionString) {
         eventHubClientBuilder.connectionString(connectionString);
         return this;
@@ -229,7 +187,6 @@ public class EventProcessorClientBuilder implements
      * @param configuration The configuration store used to configure the {@link EventHubAsyncClient}.
      * @return The updated {@link EventProcessorClientBuilder} object.
      */
-    @Override
     public EventProcessorClientBuilder configuration(Configuration configuration) {
         eventHubClientBuilder.configuration(configuration);
         return this;
@@ -251,23 +208,6 @@ public class EventProcessorClientBuilder implements
     public EventProcessorClientBuilder credential(String fullyQualifiedNamespace, String eventHubName,
         TokenCredential credential) {
         eventHubClientBuilder.credential(fullyQualifiedNamespace, eventHubName, credential);
-        return this;
-    }
-
-    /**
-     * Sets the {@link TokenCredential} used to authorize requests sent to the service. Refer to the Azure SDK for Java
-     * <a href="https://aka.ms/azsdk/java/docs/identity">identity and authentication</a>
-     * documentation for more details on proper usage of the {@link TokenCredential} type.
-     *
-     * @param credential The token credential to use for authorization. Access controls may be specified by the Event
-     * Hubs namespace or the requested Event Hub, depending on Azure configuration.
-     * @return The updated {@link EventProcessorClientBuilder} object.
-     * @throws NullPointerException if {@code credential} is
-     * null.
-     */
-    @Override
-    public EventProcessorClientBuilder credential(TokenCredential credential) {
-        eventHubClientBuilder.credential(credential);
         return this;
     }
 
@@ -296,22 +236,6 @@ public class EventProcessorClientBuilder implements
     /**
      * Sets the credential information for which Event Hub instance to connect to, and how to authorize against it.
      *
-     * @param credential The shared access name and key credential to use for authorization.
-     *     Access controls may be specified by the Event Hubs namespace or the requested Event Hub,
-     *     depending on Azure configuration.
-     *
-     * @return The updated {@link EventProcessorClientBuilder} object.
-     * @throws NullPointerException if {@code credentials} is null.
-     */
-    @Override
-    public EventProcessorClientBuilder credential(AzureNamedKeyCredential credential) {
-        eventHubClientBuilder.credential(credential);
-        return this;
-    }
-
-    /**
-     * Sets the credential information for which Event Hub instance to connect to, and how to authorize against it.
-     *
      * @param fullyQualifiedNamespace The fully qualified name for the Event Hubs namespace. This is likely to be
      *     similar to <strong>{@literal "{your-namespace}.servicebus.windows.net}"</strong>.
      * @param eventHubName The name of the Event Hub to connect the client to.
@@ -328,22 +252,6 @@ public class EventProcessorClientBuilder implements
     public EventProcessorClientBuilder credential(String fullyQualifiedNamespace, String eventHubName,
         AzureSasCredential credential) {
         eventHubClientBuilder.credential(fullyQualifiedNamespace, eventHubName, credential);
-        return this;
-    }
-
-    /**
-     * Sets the credential information for which Event Hub instance to connect to, and how to authorize against it.
-     *
-     * @param credential The shared access signature credential to use for authorization.
-     *     Access controls may be specified by the Event Hubs namespace or the requested Event Hub,
-     *     depending on Azure configuration.
-     *
-     * @return The updated {@link EventProcessorClientBuilder} object.
-     * @throws NullPointerException if {@code credentials} is null.
-     */
-    @Override
-    public EventProcessorClientBuilder credential(AzureSasCredential credential) {
-        eventHubClientBuilder.credential(credential);
         return this;
     }
 
@@ -371,7 +279,6 @@ public class EventProcessorClientBuilder implements
      * @param proxyOptions The proxy options to use.
      * @return The updated {@link EventProcessorClientBuilder} object.
      */
-    @Override
     public EventProcessorClientBuilder proxyOptions(ProxyOptions proxyOptions) {
         eventHubClientBuilder.proxyOptions(proxyOptions);
         return this;
@@ -384,7 +291,6 @@ public class EventProcessorClientBuilder implements
      * @param transport The transport type to use.
      * @return The updated {@link EventProcessorClientBuilder} object.
      */
-    @Override
     public EventProcessorClientBuilder transportType(AmqpTransportType transport) {
         eventHubClientBuilder.transportType(transport);
         return this;
@@ -395,23 +301,9 @@ public class EventProcessorClientBuilder implements
      *
      * @param retryOptions The retry policy to use.
      * @return The updated {@link EventProcessorClientBuilder} object.
-     * @deprecated Replaced by {@link #retryOptions(AmqpRetryOptions)}.
      */
-    @Deprecated
     public EventProcessorClientBuilder retry(AmqpRetryOptions retryOptions) {
-        eventHubClientBuilder.retryOptions(retryOptions);
-        return this;
-    }
-
-    /**
-     * Sets the retry policy for {@link EventHubAsyncClient}. If not specified, the default retry options are used.
-     *
-     * @param retryOptions The retry options to use.
-     * @return The updated {@link EventProcessorClientBuilder} object.
-     */
-    @Override
-    public EventProcessorClientBuilder retryOptions(AmqpRetryOptions retryOptions) {
-        eventHubClientBuilder.retryOptions(retryOptions);
+        eventHubClientBuilder.retry(retryOptions);
         return this;
     }
 
@@ -423,7 +315,6 @@ public class EventProcessorClientBuilder implements
      * @param clientOptions The client options.
      * @return The updated {@link EventProcessorClientBuilder} object.
      */
-    @Override
     public EventProcessorClientBuilder clientOptions(ClientOptions clientOptions) {
         eventHubClientBuilder.clientOptions(clientOptions);
         return this;

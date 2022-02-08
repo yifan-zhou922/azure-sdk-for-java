@@ -10,7 +10,6 @@ import com.azure.messaging.eventhubs.implementation.PartitionProcessor;
 import com.azure.messaging.eventhubs.models.ErrorContext;
 import com.azure.messaging.eventhubs.models.EventPosition;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,7 @@ import java.util.stream.Collectors;
 public class EventProcessorClient {
 
     private static final long BASE_JITTER_IN_SECONDS = 2; // the initial delay jitter before starting the processor
-    private final ClientLogger logger;
+    private final ClientLogger logger = new ClientLogger(EventProcessorClient.class);
 
     private final String identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -91,16 +90,12 @@ public class EventProcessorClient {
 
         this.checkpointStore = Objects.requireNonNull(checkpointStore, "checkpointStore cannot be null");
         this.identifier = UUID.randomUUID().toString();
-
-        Map<String, Object> loggingContext = new HashMap<>();
-        loggingContext.put("eventProcessorId", identifier);
-
-        this.logger = new ClientLogger(EventProcessorClient.class, loggingContext);
         this.fullyQualifiedNamespace = eventHubAsyncClient.getFullyQualifiedNamespace().toLowerCase(Locale.ROOT);
         this.eventHubName = eventHubAsyncClient.getEventHubName().toLowerCase(Locale.ROOT);
         this.consumerGroup = consumerGroup.toLowerCase(Locale.ROOT);
         this.loadBalancerUpdateInterval = loadBalancerUpdateInterval;
 
+        logger.info("The instance ID for this event processors is {}", this.identifier);
         this.partitionPumpManager = new PartitionPumpManager(checkpointStore, partitionProcessorFactory,
             eventHubClientBuilder, trackLastEnqueuedEventProperties, tracerProvider, initialPartitionEventPosition,
             maxBatchSize, maxWaitTime, batchReceiveMode);
@@ -143,7 +138,7 @@ public class EventProcessorClient {
             logger.info("Event processor is already running");
             return;
         }
-        logger.info("Starting a new event processor instance.");
+        logger.info("Starting a new event processor instance with id {}", this.identifier);
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         scheduler.set(executor);

@@ -5,7 +5,6 @@ package com.azure.messaging.eventhubs;
 
 import com.azure.core.util.CoreUtils;
 import com.azure.core.util.logging.ClientLogger;
-import com.azure.core.util.logging.LogLevel;
 import com.azure.messaging.eventhubs.models.ErrorContext;
 import com.azure.messaging.eventhubs.models.PartitionContext;
 import com.azure.messaging.eventhubs.models.PartitionOwnership;
@@ -28,9 +27,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.azure.messaging.eventhubs.implementation.ClientConstants.ENTITY_PATH_KEY;
-import static com.azure.messaging.eventhubs.implementation.ClientConstants.OWNER_ID_KEY;
-import static com.azure.messaging.eventhubs.implementation.ClientConstants.PARTITION_ID_KEY;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
@@ -116,9 +112,7 @@ final class PartitionBasedLoadBalancer {
             return;
         }
 
-        logger.atInfo()
-            .addKeyValue(OWNER_ID_KEY, this.ownerId)
-            .log("Starting load balancer.");
+        logger.info("Starting load balancer for {}", this.ownerId);
         /*
          * Retrieve current partition ownership details from the datastore.
          */
@@ -133,10 +127,7 @@ final class PartitionBasedLoadBalancer {
         Mono<List<String>> partitionsMono;
         if (CoreUtils.isNullOrEmpty(partitionsCache.get())) {
             // Call Event Hubs service to get the partition ids if the cache is empty
-            logger.atInfo()
-                .addKeyValue(ENTITY_PATH_KEY, eventHubName)
-                .log("Getting partitions from Event Hubs service.");
-
+            logger.info("Getting partitions from Event Hubs service for {}", eventHubName);
             partitionsMono = eventHubAsyncClient
                 .getPartitionIds()
                 .timeout(Duration.ofMinutes(1))
@@ -153,7 +144,7 @@ final class PartitionBasedLoadBalancer {
             .repeat(() -> LoadBalancingStrategy.GREEDY == loadBalancingStrategy && morePartitionsToClaim.get())
             .subscribe(ignored -> { },
                 ex -> {
-                    logger.warning(Messages.LOAD_BALANCING_FAILED, ex);
+                    logger.warning(Messages.LOAD_BALANCING_FAILED, ex.getMessage(), ex);
                     ErrorContext errorContext = new ErrorContext(partitionAgnosticContext, ex);
                     processError.accept(errorContext);
                     isLoadBalancerRunning.set(false);
@@ -209,10 +200,7 @@ final class PartitionBasedLoadBalancer {
 
             // add the current event processor to the map if it doesn't exist
             ownerPartitionMap.putIfAbsent(this.ownerId, new ArrayList<>());
-
-            if (logger.canLogAtLevel(LogLevel.VERBOSE)) {
-                logger.verbose("Current partition distribution {}", format(ownerPartitionMap));
-            }
+            logger.verbose("Current partition distribution {}", format(ownerPartitionMap));
 
             if (CoreUtils.isNullOrEmpty(activePartitionOwnershipMap)) {
                 /*
@@ -362,11 +350,8 @@ final class PartitionBasedLoadBalancer {
             .max(Comparator.comparingInt(entry -> entry.getValue().size()))
             .get();
         int numberOfPartitions = ownerWithMaxPartitions.getValue().size();
-
-        logger.atInfo()
-            .addKeyValue(OWNER_ID_KEY, ownerWithMaxPartitions.getKey())
-            .log("Owner owns {} partitions, stealing a partition from it.", numberOfPartitions);
-
+        logger.info("Owner id {} owns {} partitions, stealing a partition from it", ownerWithMaxPartitions.getKey(),
+            numberOfPartitions);
         return ownerWithMaxPartitions.getValue().get(RANDOM.nextInt(numberOfPartitions)).getPartitionId();
     }
 
@@ -432,10 +417,7 @@ final class PartitionBasedLoadBalancer {
 
     private void claimOwnership(final Map<String, PartitionOwnership> partitionOwnershipMap, Map<String,
         List<PartitionOwnership>> ownerPartitionsMap, final String partitionIdToClaim) {
-        logger.atInfo()
-            .addKeyValue(PARTITION_ID_KEY, partitionIdToClaim)
-            .log("Attempting to claim ownership of partition.");
-
+        logger.info("Attempting to claim ownership of partition {}", partitionIdToClaim);
         PartitionOwnership ownershipRequest = createPartitionOwnershipRequest(partitionOwnershipMap,
             partitionIdToClaim);
 
@@ -453,13 +435,11 @@ final class PartitionBasedLoadBalancer {
         morePartitionsToClaim.set(true);
         checkpointStore
             .claimOwnership(partitionsToClaim)
-            .doOnNext(partitionOwnership -> logger.atInfo()
-                    .addKeyValue(PARTITION_ID_KEY, partitionOwnership.getPartitionId())
-                    .log("Successfully claimed ownership."))
+            .doOnNext(partitionOwnership -> logger.info("Successfully claimed ownership of partition {}",
+                partitionOwnership.getPartitionId()))
             .doOnError(ex -> logger
-                .atWarning()
-                .addKeyValue(PARTITION_ID_KEY, ownershipRequest.getPartitionId())
-                .log(Messages.FAILED_TO_CLAIM_OWNERSHIP, ex))
+                .warning(Messages.FAILED_TO_CLAIM_OWNERSHIP, ownershipRequest.getPartitionId(),
+                    ex.getMessage(), ex))
             .collectList()
             .zipWhen(ownershipList -> checkpointStore.listCheckpoints(fullyQualifiedNamespace, eventHubName,
                 consumerGroupName)
