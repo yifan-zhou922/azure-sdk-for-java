@@ -4,12 +4,6 @@
 package com.azure.messaging.eventgrid;
 
 import com.azure.core.annotation.ServiceClientBuilder;
-import com.azure.core.client.traits.AzureKeyCredentialTrait;
-import com.azure.core.client.traits.AzureSasCredentialTrait;
-import com.azure.core.client.traits.ConfigurationTrait;
-import com.azure.core.client.traits.EndpointTrait;
-import com.azure.core.client.traits.HttpTrait;
-import com.azure.core.client.traits.TokenCredentialTrait;
 import com.azure.core.credential.AzureKeyCredential;
 import com.azure.core.credential.AzureSasCredential;
 import com.azure.core.credential.TokenCredential;
@@ -22,13 +16,11 @@ import com.azure.core.http.policy.AddDatePolicy;
 import com.azure.core.http.policy.AddHeadersPolicy;
 import com.azure.core.http.policy.AzureKeyCredentialPolicy;
 import com.azure.core.http.policy.BearerTokenAuthenticationPolicy;
-import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.HttpLoggingPolicy;
 import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.http.policy.HttpPolicyProviders;
 import com.azure.core.http.policy.RequestIdPolicy;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.models.CloudEvent;
@@ -36,8 +28,6 @@ import com.azure.core.util.BinaryData;
 import com.azure.core.util.ClientOptions;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.CoreUtils;
-import com.azure.core.util.HttpClientOptions;
-import com.azure.core.util.builder.ClientBuilderUtil;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.core.util.tracing.TracerProxy;
 import com.azure.messaging.eventgrid.implementation.CloudEventTracingPipelinePolicy;
@@ -56,13 +46,7 @@ import java.util.Objects;
  * @see CloudEvent
  */
 @ServiceClientBuilder(serviceClients = {EventGridPublisherClient.class, EventGridPublisherAsyncClient.class})
-public final class EventGridPublisherClientBuilder implements
-    TokenCredentialTrait<EventGridPublisherClientBuilder>,
-    AzureKeyCredentialTrait<EventGridPublisherClientBuilder>,
-    AzureSasCredentialTrait<EventGridPublisherClientBuilder>,
-    HttpTrait<EventGridPublisherClientBuilder>,
-    ConfigurationTrait<EventGridPublisherClientBuilder>,
-    EndpointTrait<EventGridPublisherClientBuilder> {
+public final class EventGridPublisherClientBuilder {
 
     private static final String AEG_SAS_KEY = "aeg-sas-key";
 
@@ -103,8 +87,6 @@ public final class EventGridPublisherClientBuilder implements
 
     private RetryPolicy retryPolicy;
 
-    private RetryOptions retryOptions;
-
     /**
      * Construct a new instance with default building settings. The endpoint and one credential method must be set
      * in order for the client to be built.
@@ -124,8 +106,6 @@ public final class EventGridPublisherClientBuilder implements
      * All other settings have defaults and are optional.
      * @return a publisher client with asynchronous publishing methods.
      * @throws NullPointerException if {@code endpoint} is null.
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     * and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     private <T> EventGridPublisherAsyncClient<T> buildAsyncClient(Class<T> eventClass) {
         Objects.requireNonNull(endpoint, "'endpoint' is required and can not be null.");
@@ -152,7 +132,7 @@ public final class EventGridPublisherClientBuilder implements
         httpPipelinePolicies.add(new RequestIdPolicy());
 
         HttpPolicyProviders.addBeforeRetryPolicies(httpPipelinePolicies);
-        httpPipelinePolicies.add(ClientBuilderUtil.validateAndGetRetryPolicy(retryPolicy, retryOptions));
+        httpPipelinePolicies.add(retryPolicy == null ? new RetryPolicy() : retryPolicy);
 
         httpPipelinePolicies.add(new AddDatePolicy());
 
@@ -219,27 +199,18 @@ public final class EventGridPublisherClientBuilder implements
     }
 
     /**
-     * Adds a {@link HttpPipelinePolicy pipeline policy} to apply on each request sent.
+     * Add a policy to the current pipeline.
+     * @param httpPipelinePolicy the policy to add.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param httpPipelinePolicy A {@link HttpPipelinePolicy pipeline policy}.
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder addPolicy(HttpPipelinePolicy httpPipelinePolicy) {
         this.policies.add(Objects.requireNonNull(httpPipelinePolicy));
         return this;
     }
 
     /**
-     * Add a custom retry policy to the pipeline. The default is {@link RetryPolicy#RetryPolicy()}.
-     * Setting this is mutually exclusive with using {@link #retryOptions(RetryOptions)}.
+     * Add a custom retry policy to the pipeline. The default is {@link RetryPolicy#RetryPolicy()}
      * @param retryPolicy the retry policy to add.
      *
      * @return the builder itself.
@@ -250,45 +221,15 @@ public final class EventGridPublisherClientBuilder implements
     }
 
     /**
-     * Sets the {@link RetryOptions} for all the requests made through the client.
+     * Sets the {@link ClientOptions} which enables various options to be set on the client. For example setting an
+     * {@code applicationId} using {@link ClientOptions#setApplicationId(String)} to configure
+     * the {@link UserAgentPolicy} for telemetry/monitoring purposes.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryPolicy(RetryPolicy)}.
+     * <p>More About <a href="https://azure.github.io/azure-sdk/general_azurecore.html#telemetry-policy">Azure Core: Telemetry policy</a>
      *
-     * @param retryOptions The {@link RetryOptions} to use for all the requests made through the client.
-     * @return the builder itself.
-     */
-    @Override
-    public EventGridPublisherClientBuilder retryOptions(RetryOptions retryOptions) {
-        this.retryOptions = retryOptions;
-        return this;
-    }
-
-    /**
-     * Allows for setting common properties such as application ID, headers, proxy configuration, etc. Note that it is
-     * recommended that this method be called with an instance of the {@link HttpClientOptions}
-     * class (a subclass of the {@link ClientOptions} base class). The HttpClientOptions subclass provides more
-     * configuration options suitable for HTTP clients, which is applicable for any class that implements this HttpTrait
-     * interface.
-     *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param clientOptions A configured instance of {@link HttpClientOptions}.
-     * @see HttpClientOptions
+     * @param clientOptions the {@link ClientOptions} to be set on the client.
      * @return The updated EventGridPublisherClientBuilder object.
      */
-    @Override
     public EventGridPublisherClientBuilder clientOptions(ClientOptions clientOptions) {
         this.clientOptions = clientOptions;
         return this;
@@ -300,7 +241,6 @@ public final class EventGridPublisherClientBuilder implements
      *
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder configuration(Configuration configuration) {
         this.configuration = configuration;
         return this;
@@ -312,7 +252,6 @@ public final class EventGridPublisherClientBuilder implements
      *
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder credential(AzureKeyCredential credential) {
         this.keyCredential = credential;
         return this;
@@ -324,22 +263,19 @@ public final class EventGridPublisherClientBuilder implements
      *
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder credential(AzureSasCredential credential) {
         this.sasToken = credential;
         return this;
     }
 
     /**
-     * Sets the {@link TokenCredential} used to authorize requests sent to the service. Refer to the Azure SDK for Java
-     * <a href="https://aka.ms/azsdk/java/docs/identity">identity and authentication</a>
-     * documentation for more details on proper usage of the {@link TokenCredential} type.
+     * Set the domain or topic authentication using Azure Activity Directory authentication.
+     * Refer to <a href="https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/identity/azure-identity">azure-identity</a>
      *
-     * @param credential {@link TokenCredential} used to authorize requests sent to the service.
+     * @param credential the token credential to use.
      *
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder credential(TokenCredential credential) {
         this.tokenCredential = credential;
         return this;
@@ -354,7 +290,6 @@ public final class EventGridPublisherClientBuilder implements
      * @throws NullPointerException if {@code endpoint} is null.
      * @throws IllegalArgumentException if {@code endpoint} cannot be parsed into a valid URL.
      */
-    @Override
     public EventGridPublisherClientBuilder endpoint(String endpoint) {
         try {
             new URL(Objects.requireNonNull(endpoint, "'endpoint' cannot be null."));
@@ -366,19 +301,11 @@ public final class EventGridPublisherClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpClient} to use for sending and receiving requests to and from the service.
+     * Set the HTTP Client that sends requests. Will use default if not set.
+     * @param httpClient the HTTP Client to use.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param httpClient The {@link HttpClient} to use for requests.
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder httpClient(HttpClient httpClient) {
         if (this.httpClient != null && httpClient == null) {
             logger.info("Http client is set to null when it was not previously null");
@@ -388,40 +315,22 @@ public final class EventGridPublisherClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpLogOptions logging configuration} to use when sending and receiving requests to and from
-     * the service. If a {@code logLevel} is not provided, default value of {@link HttpLogDetailLevel#NONE} is set.
+     * Configure the logging of the HTTP requests and pipeline.
+     * @param httpLogOptions the log options to use.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param httpLogOptions The {@link HttpLogOptions logging configuration} to use when sending and receiving requests to
-     * and from the service.
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder httpLogOptions(HttpLogOptions httpLogOptions) {
         this.httpLogOptions = httpLogOptions;
         return this;
     }
 
     /**
-     * Sets the {@link HttpPipeline} to use for the service client.
+     * Set the HTTP pipeline to use when sending calls to the service.
+     * @param httpPipeline the pipeline to use.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param httpPipeline {@link HttpPipeline} to use for sending service requests and receiving responses.
      * @return the builder itself.
      */
-    @Override
     public EventGridPublisherClientBuilder pipeline(HttpPipeline httpPipeline) {
         if (this.httpPipeline != null && httpPipeline == null) {
             logger.info("Http client is set to null when it was not previously null");
