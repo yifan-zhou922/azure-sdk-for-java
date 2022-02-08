@@ -12,7 +12,6 @@ import com.azure.core.amqp.models.AmqpMessageId;
 import com.azure.core.util.BinaryData;
 import com.azure.core.util.Context;
 import com.azure.core.util.logging.ClientLogger;
-import com.azure.messaging.servicebus.models.ServiceBusMessageState;
 import com.azure.messaging.servicebus.models.ServiceBusReceiveMode;
 
 import java.time.Duration;
@@ -47,13 +46,11 @@ import static com.azure.core.amqp.AmqpMessageConstant.SEQUENCE_NUMBER_ANNOTATION
  */
 public final class ServiceBusReceivedMessage {
     private final ClientLogger logger = new ClientLogger(ServiceBusReceivedMessage.class);
-    private final AmqpAnnotatedMessage amqpAnnotatedMessage;
 
+    private final AmqpAnnotatedMessage amqpAnnotatedMessage;
     private UUID lockToken;
     private boolean isSettled = false;
     private Context context;
-
-    static final String SERVICE_BUS_MESSAGE_STATE_KEY = "x-opt-message-state";
 
     ServiceBusReceivedMessage(BinaryData body) {
         Objects.requireNonNull(body, "'body' cannot be null.");
@@ -321,25 +318,6 @@ public final class ServiceBusReceivedMessage {
             messageId = amqpMessageId.toString();
         }
         return messageId;
-    }
-
-    /**
-     * Gets the state of the message.
-     *
-     * The state of the message can be Active, Deferred, or Scheduled. Deferred messages have Deferred state, scheduled
-     * messages have Scheduled state, all other messages have Active state.
-     *
-     * @return The state of the message.
-     * @throws UnsupportedOperationException if the message state is an unknown value.
-     */
-    public ServiceBusMessageState getMessageState() {
-        final Object value = amqpAnnotatedMessage.getMessageAnnotations().get(SERVICE_BUS_MESSAGE_STATE_KEY);
-
-        if (value instanceof Integer) {
-            return ServiceBusMessageState.fromValue((Integer) value);
-        } else {
-            return ServiceBusMessageState.ACTIVE;
-        }
     }
 
     /**
