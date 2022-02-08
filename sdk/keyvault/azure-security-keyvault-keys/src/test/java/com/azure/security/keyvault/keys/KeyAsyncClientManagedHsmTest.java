@@ -112,27 +112,4 @@ public class KeyAsyncClientManagedHsmTest extends KeyAsyncClientTest implements 
                 .verifyErrorSatisfies(ex ->
                     assertRestException(ex, ResourceModifiedException.class, HttpURLConnection.HTTP_BAD_REQUEST)));
     }
-
-    /**
-     * Tests that random bytes can be retrieved from a Managed HSM.
-     */
-    @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
-    @MethodSource("getTestParameters")
-    public void getRandomBytes(HttpClient httpClient, KeyServiceVersion serviceVersion) {
-        createKeyAsyncClient(httpClient, serviceVersion);
-        getRandomBytesRunner((count) ->
-            StepVerifier.create(client.getRandomBytes(count))
-                .assertNext(randomBytes -> assertEquals(count, randomBytes.getBytes().length))
-                .verifyComplete());
-    }
-
-    /**
-     * Tests that an existing key can be released.
-     */
-    @Override
-    @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
-    @MethodSource("getTestParameters")
-    public void releaseKey(HttpClient httpClient, KeyServiceVersion serviceVersion) {
-        super.releaseKey(httpClient, serviceVersion);
-    }
 }

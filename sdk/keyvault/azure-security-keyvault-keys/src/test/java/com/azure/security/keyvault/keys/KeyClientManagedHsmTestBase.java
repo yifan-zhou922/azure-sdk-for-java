@@ -18,7 +18,4 @@ public interface KeyClientManagedHsmTestBase {
 
     @Test
     void createOctKeyWithInvalidSize(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
-    @Test
-    void getRandomBytes(HttpClient httpClient, KeyServiceVersion serviceVersion);
 }

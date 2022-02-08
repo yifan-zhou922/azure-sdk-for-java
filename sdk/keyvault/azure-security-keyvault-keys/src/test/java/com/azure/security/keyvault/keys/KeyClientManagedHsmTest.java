@@ -8,7 +8,6 @@ import com.azure.core.test.TestMode;
 import com.azure.core.util.Configuration;
 import com.azure.security.keyvault.keys.models.KeyType;
 import com.azure.security.keyvault.keys.models.KeyVaultKey;
-import com.azure.security.keyvault.keys.models.RandomBytes;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -106,29 +105,5 @@ public class KeyClientManagedHsmTest extends KeyClientTest implements KeyClientM
         createKeyClient(httpClient, serviceVersion);
         createOctKeyRunner(64, (createOctKeyOptions) ->
             assertThrows(ResourceModifiedException.class, () -> client.createOctKey(createOctKeyOptions)));
-    }
-
-    /**
-     * Tests that random bytes can be retrieved from a Managed HSM.
-     */
-    @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
-    @MethodSource("getTestParameters")
-    public void getRandomBytes(HttpClient httpClient, KeyServiceVersion serviceVersion) {
-        createKeyClient(httpClient, serviceVersion);
-        getRandomBytesRunner((count) -> {
-            RandomBytes randomBytes = client.getRandomBytes(count);
-
-            assertEquals(count, randomBytes.getBytes().length);
-        });
-    }
-
-    /**
-     * Tests that an existing key can be released.
-     */
-    @Override
-    @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
-    @MethodSource("getTestParameters")
-    public void releaseKey(HttpClient httpClient, KeyServiceVersion serviceVersion) {
-        super.releaseKey(httpClient, serviceVersion);
     }
 }
