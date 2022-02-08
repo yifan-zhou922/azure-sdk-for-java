@@ -71,18 +71,6 @@ public final class KeyVaultDataAction extends ExpandableStringEnum<KeyVaultDataA
         fromString("Microsoft.KeyVault/managedHsm/roleDefinitions/read/action");
 
     /**
-     * Static value Microsoft.KeyVault/managedHsm/roleDefinitions/write/action for DataAction.
-     */
-    public static final KeyVaultDataAction WRITE_ROLE_DEFINITION =
-        fromString("Microsoft.KeyVault/managedHsm/roleDefinitions/write/action");
-
-    /**
-     * Static value Microsoft.KeyVault/managedHsm/roleDefinitions/delete/action for DataAction.
-     */
-    public static final KeyVaultDataAction DELETE_ROLE_DEFINITION =
-        fromString("Microsoft.KeyVault/managedHsm/roleDefinitions/delete/action");
-
-    /**
      * Static value Microsoft.KeyVault/managedHsm/keys/encrypt/action for {@link KeyVaultDataAction}.
      */
     public static final KeyVaultDataAction ENCRYPT_HSM_KEY =
@@ -137,12 +125,6 @@ public final class KeyVaultDataAction extends ExpandableStringEnum<KeyVaultDataA
         fromString("Microsoft.KeyVault/managedHsm/keys/export/action");
 
     /**
-     * Static value Microsoft.KeyVault/managedHsm/keys/release/action for DataAction.
-     */
-    public static final KeyVaultDataAction RELEASE_KEY =
-        fromString("Microsoft.KeyVault/managedHsm/keys/release/action");
-
-    /**
      * Static value Microsoft.KeyVault/managedHsm/keys/import/action for {@link KeyVaultDataAction}.
      */
     public static final KeyVaultDataAction IMPORT_HSM_KEY =
@@ -159,12 +141,6 @@ public final class KeyVaultDataAction extends ExpandableStringEnum<KeyVaultDataA
      */
     public static final KeyVaultDataAction DOWNLOAD_HSM_SECURITY_DOMAIN =
         fromString("Microsoft.KeyVault/managedHsm/securitydomain/download/action");
-
-    /**
-     * Static value Microsoft.KeyVault/managedHsm/securitydomain/download/read for DataAction.
-     */
-    public static final KeyVaultDataAction DOWNLOAD_HSM_SECURITY_DOMAIN_STATUS =
-        fromString("Microsoft.KeyVault/managedHsm/securitydomain/download/read");
 
     /**
      * Static value Microsoft.KeyVault/managedHsm/securitydomain/upload/action for {@link KeyVaultDataAction}.
@@ -209,15 +185,10 @@ public final class KeyVaultDataAction extends ExpandableStringEnum<KeyVaultDataA
         fromString("Microsoft.KeyVault/managedHsm/restore/status/action");
 
     /**
-     * Static value Microsoft.KeyVault/managedHsm/rng/action for DataAction.
-     */
-    public static final KeyVaultDataAction RANDOM_NUMBERS_GENERATE =
-        fromString("Microsoft.KeyVault/managedHsm/rng/action");
-
-    /**
      * Creates or finds a {@link KeyVaultDataAction} from its string representation.
      *
      * @param name A name to look for.
+     *
      * @return The corresponding {@link KeyVaultDataAction}.
      */
     @JsonCreator

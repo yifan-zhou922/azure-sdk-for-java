@@ -6,10 +6,8 @@ package com.azure.security.keyvault.administration.implementation;
 
 import com.azure.core.annotation.ServiceClientBuilder;
 import com.azure.core.http.HttpClient;
-import com.azure.core.http.HttpHeaders;
 import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.HttpPipelineBuilder;
-import com.azure.core.http.policy.AddHeadersPolicy;
 import com.azure.core.http.policy.CookiePolicy;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.HttpLoggingPolicy;
@@ -17,9 +15,7 @@ import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.http.policy.HttpPolicyProviders;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.UserAgentPolicy;
-import com.azure.core.util.ClientOptions;
 import com.azure.core.util.Configuration;
-import com.azure.core.util.CoreUtils;
 import com.azure.core.util.serializer.JacksonAdapter;
 import com.azure.core.util.serializer.SerializerAdapter;
 import java.util.ArrayList;
@@ -160,23 +156,6 @@ public final class KeyVaultAccessControlClientImplBuilder {
      */
     private final List<HttpPipelinePolicy> pipelinePolicies;
 
-    /*
-     * The client options such as application ID and custom headers to set on a
-     * request.
-     */
-    private ClientOptions clientOptions;
-
-    /**
-     * Sets The client options such as application ID and custom headers to set on a request.
-     *
-     * @param clientOptions the clientOptions value.
-     * @return the KeyVaultAccessControlClientImplBuilder.
-     */
-    public KeyVaultAccessControlClientImplBuilder clientOptions(ClientOptions clientOptions) {
-        this.clientOptions = clientOptions;
-        return this;
-    }
-
     /**
      * Adds a custom Http pipeline policy.
      *
@@ -195,7 +174,7 @@ public final class KeyVaultAccessControlClientImplBuilder {
      */
     public KeyVaultAccessControlClientImpl buildClient() {
         if (apiVersion == null) {
-            this.apiVersion = "7.3-preview";
+            this.apiVersion = "7.2";
         }
         if (pipeline == null) {
             this.pipeline = createHttpPipeline();
@@ -214,19 +193,11 @@ public final class KeyVaultAccessControlClientImplBuilder {
         if (httpLogOptions == null) {
             httpLogOptions = new HttpLogOptions();
         }
-        if (clientOptions == null) {
-            clientOptions = new ClientOptions();
-        }
         List<HttpPipelinePolicy> policies = new ArrayList<>();
         String clientName = properties.getOrDefault(SDK_NAME, "UnknownName");
         String clientVersion = properties.getOrDefault(SDK_VERSION, "UnknownVersion");
-        String applicationId = CoreUtils.getApplicationId(clientOptions, httpLogOptions);
-        policies.add(new UserAgentPolicy(applicationId, clientName, clientVersion, buildConfiguration));
-        HttpHeaders headers = new HttpHeaders();
-        clientOptions.getHeaders().forEach(header -> headers.set(header.getName(), header.getValue()));
-        if (headers.getSize() > 0) {
-            policies.add(new AddHeadersPolicy(headers));
-        }
+        policies.add(
+                new UserAgentPolicy(httpLogOptions.getApplicationId(), clientName, clientVersion, buildConfiguration));
         HttpPolicyProviders.addBeforeRetryPolicies(policies);
         policies.add(retryPolicy == null ? new RetryPolicy() : retryPolicy);
         policies.add(new CookiePolicy());
