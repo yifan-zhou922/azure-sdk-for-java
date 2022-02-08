@@ -7,7 +7,6 @@ import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.GoneException;
 import com.azure.cosmos.implementation.HttpConstants;
-import com.azure.cosmos.implementation.clienttelemetry.ClientTelemetry;
 import com.azure.cosmos.implementation.directconnectivity.IAddressResolver;
 import com.azure.cosmos.implementation.directconnectivity.RntbdTransportClient;
 import com.azure.cosmos.implementation.directconnectivity.TransportException;
@@ -79,10 +78,9 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
     private final RntbdRequestTimer requestTimer;
     private final Tag tag;
     private final int maxConcurrentRequests;
+    private final boolean channelAcquisitionContextEnabled;
 
     private final RntbdConnectionStateListener connectionStateListener;
-
-    private final ClientTelemetry clientTelemetry;
 
     // endregion
 
@@ -93,15 +91,14 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
         final Config config,
         final EventLoopGroup group,
         final RntbdRequestTimer timer,
-        final URI physicalAddress,
-        final ClientTelemetry clientTelemetry) {
+        final URI physicalAddress) {
 
         this.serverKey = RntbdUtils.getServerKey(physicalAddress);
 
         final Bootstrap bootstrap = this.getBootStrap(group, config);
 
         this.createdTime = Instant.now();
-        this.channelPool = new RntbdClientChannelPool(this, bootstrap, config, clientTelemetry);
+        this.channelPool = new RntbdClientChannelPool(this, bootstrap, config);
         this.remoteAddress = bootstrap.config().remoteAddress();
         this.concurrentRequests = new AtomicInteger();
         // if no request has been sent over this endpoint we want to make sure we don't trigger a connection close
@@ -125,7 +122,7 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
             ? new RntbdConnectionStateListener(this.provider.addressResolver, this)
             : null;
 
-        this.clientTelemetry = clientTelemetry;
+        this.channelAcquisitionContextEnabled = config.isChannelAcquisitionContextEnabled();
     }
 
     private Bootstrap getBootStrap(EventLoopGroup eventLoopGroup, Config config) {
@@ -377,6 +374,7 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
     private RntbdRequestRecord write(final RntbdRequestArgs requestArgs) {
 
         final RntbdRequestRecord requestRecord = new AsyncRntbdRequestRecord(requestArgs, this.requestTimer);
+        requestRecord.channelAcquisitionContextEnabled(this.channelAcquisitionContextEnabled);
         requestRecord.stage(RntbdRequestRecord.Stage.CHANNEL_ACQUISITION_STARTED);
         final Future<Channel> connectedChannel = this.channelPool.acquire(requestRecord.getChannelAcquisitionTimeline());
 
@@ -478,14 +476,12 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
         private final RntbdRequestTimer requestTimer;
         private final RntbdTransportClient transportClient;
         private final IAddressResolver addressResolver;
-        private final ClientTelemetry clientTelemetry;
 
         public Provider(
             final RntbdTransportClient transportClient,
             final Options options,
             final SslContext sslContext,
-            final IAddressResolver addressResolver,
-            final ClientTelemetry clientTelemetry) {
+            final IAddressResolver addressResolver) {
 
             checkNotNull(transportClient, "expected non-null provider");
             checkNotNull(options, "expected non-null options");
@@ -511,7 +507,6 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
             this.endpoints = new ConcurrentHashMap<>();
             this.evictions = new AtomicInteger();
             this.closed = new AtomicBoolean();
-            this.clientTelemetry = clientTelemetry;
             this.monitoring = new RntbdEndpointMonitoringProvider(this);
             this.monitoring.init();
         }
@@ -580,8 +575,7 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
                 this.config,
                 this.eventLoopGroup,
                 this.requestTimer,
-                physicalAddress,
-                this.clientTelemetry));
+                physicalAddress));
         }
 
         @Override

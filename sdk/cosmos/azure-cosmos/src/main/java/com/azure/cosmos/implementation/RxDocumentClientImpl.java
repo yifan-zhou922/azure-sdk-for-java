@@ -457,16 +457,16 @@ public class RxDocumentClientImpl implements AsyncDocumentClient, IAuthorization
                 collectionCache);
 
             updateGatewayProxy();
-            clientTelemetry = new ClientTelemetry(null, UUID.randomUUID().toString(),
-                ManagementFactory.getRuntimeMXBean().getName(), userAgentContainer.getUserAgent(),
-                connectionPolicy.getConnectionMode(), globalEndpointManager.getLatestDatabaseAccount().getId(),
-                null, null, this.reactorHttpClient, connectionPolicy.isClientTelemetryEnabled(), this, this.connectionPolicy.getPreferredRegions());
-            clientTelemetry.init();
             if (this.connectionPolicy.getConnectionMode() == ConnectionMode.GATEWAY) {
                 this.storeModel = this.gatewayProxy;
             } else {
                 this.initializeDirectConnectivity();
             }
+            clientTelemetry = new ClientTelemetry(null, UUID.randomUUID().toString(),
+                ManagementFactory.getRuntimeMXBean().getName(), userAgentContainer.getUserAgent(),
+                connectionPolicy.getConnectionMode(), globalEndpointManager.getLatestDatabaseAccount().getId(),
+                null, null, this.reactorHttpClient, connectionPolicy.isClientTelemetryEnabled(), this, this.connectionPolicy.getPreferredRegions());
+            clientTelemetry.init();
             this.queryPlanCache = new ConcurrentHashMap<>();
             this.retryPolicy.setRxCollectionCache(this.collectionCache);
         } catch (Exception e) {
@@ -503,8 +503,7 @@ public class RxDocumentClientImpl implements AsyncDocumentClient, IAuthorization
             this.connectionPolicy,
             // this.maxConcurrentConnectionOpenRequests,
             this.userAgentContainer,
-            this.connectionSharingAcrossClientsEnabled,
-            this.clientTelemetry
+            this.connectionSharingAcrossClientsEnabled
         );
 
         this.createStoreModel(true);

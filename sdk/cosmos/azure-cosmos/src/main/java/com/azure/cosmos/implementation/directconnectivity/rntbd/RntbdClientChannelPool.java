@@ -3,7 +3,6 @@
 
 package com.azure.cosmos.implementation.directconnectivity.rntbd;
 
-import com.azure.cosmos.implementation.clienttelemetry.ClientTelemetry;
 import com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdEndpoint.Config;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -182,23 +181,22 @@ public final class RntbdClientChannelPool implements ChannelPool {
         Comparator.comparingLong((task) -> task.originalPromise.getExpiryTimeInNanos()));
 
     private final ScheduledFuture<?> pendingAcquisitionExpirationFuture;
-    private final ClientTelemetry clientTelemetry;
+
     /**
      * Initializes a newly created {@link RntbdClientChannelPool} instance.
      *
      * @param bootstrap the {@link Bootstrap} that is used for connections.
      * @param config the {@link Config} that is used for the channel pool instance created.
      */
-    RntbdClientChannelPool(final RntbdServiceEndpoint endpoint, final Bootstrap bootstrap, final Config config, final ClientTelemetry clientTelemetry) {
-        this(endpoint, bootstrap, config, new RntbdClientChannelHealthChecker(config), clientTelemetry);
+    RntbdClientChannelPool(final RntbdServiceEndpoint endpoint, final Bootstrap bootstrap, final Config config) {
+        this(endpoint, bootstrap, config, new RntbdClientChannelHealthChecker(config));
     }
 
     private RntbdClientChannelPool(
         final RntbdServiceEndpoint endpoint,
         final Bootstrap bootstrap,
         final Config config,
-        final RntbdClientChannelHealthChecker healthChecker,
-        final ClientTelemetry clientTelemetry) {
+        final RntbdClientChannelHealthChecker healthChecker) {
 
         checkNotNull(endpoint, "expected non-null endpoint");
         checkNotNull(bootstrap, "expected non-null bootstrap");
@@ -241,8 +239,7 @@ public final class RntbdClientChannelPool implements ChannelPool {
                 task.originalPromise.setFailure(ACQUISITION_TIMEOUT);
                 RntbdChannelAcquisitionTimeline.startNewEvent(
                     task.originalPromise.getChannelAcquisitionTimeline(),
-                    RntbdChannelAcquisitionEventType.PENDING_TIME_OUT,
-                    clientTelemetry);
+                    RntbdChannelAcquisitionEventType.PENDING_TIME_OUT);
             }
         };
 
@@ -258,7 +255,6 @@ public final class RntbdClientChannelPool implements ChannelPool {
         } else {
             this.pendingAcquisitionExpirationFuture = null;
         }
-        this.clientTelemetry = clientTelemetry;
 
 //        this.idleStateDetectionScheduledFuture = this.executor.scheduleAtFixedRate(
 //            () -> {
@@ -644,8 +640,7 @@ public final class RntbdClientChannelPool implements ChannelPool {
 
                     RntbdChannelAcquisitionTimeline.startNewEvent(
                         channelAcquisitionTimeline,
-                        RntbdChannelAcquisitionEventType.ATTEMPT_TO_CREATE_NEW_CHANNEL,
-                        clientTelemetry);
+                        RntbdChannelAcquisitionEventType.ATTEMPT_TO_CREATE_NEW_CHANNEL);
 
                     final ChannelFuture future = this.bootstrap.clone().attr(POOL_KEY, this).connect();
 
@@ -748,8 +743,7 @@ public final class RntbdClientChannelPool implements ChannelPool {
             } else {
                 RntbdChannelAcquisitionTimeline.startNewEvent(
                     promise.getChannelAcquisitionTimeline(),
-                    RntbdChannelAcquisitionEventType.ADD_TO_PENDING_QUEUE,
-                    clientTelemetry);
+                    RntbdChannelAcquisitionEventType.ADD_TO_PENDING_QUEUE);
             }
         }
     }
@@ -1124,8 +1118,7 @@ public final class RntbdClientChannelPool implements ChannelPool {
             if (promise instanceof ChannelPromiseWithExpiryTime) {
                 RntbdChannelAcquisitionTimeline.startNewEvent(
                     ((ChannelPromiseWithExpiryTime) promise).getChannelAcquisitionTimeline(),
-                    RntbdChannelAcquisitionEventType.ATTEMPT_TO_CREATE_NEW_CHANNEL_COMPLETE,
-                    clientTelemetry
+                    RntbdChannelAcquisitionEventType.ATTEMPT_TO_CREATE_NEW_CHANNEL_COMPLETE
                 );
             }
             this.connecting.set(false);
@@ -1228,8 +1221,7 @@ public final class RntbdClientChannelPool implements ChannelPool {
             RntbdChannelAcquisitionTimeline.startNewPollEvent(
                 channelAcquisitionTimeline,
                 this.availableChannels.size(),
-                this.acquiredChannels.size(),
-                this.clientTelemetry);
+                this.acquiredChannels.size());
 
         final Channel first = this.availableChannels.pollFirst();
 

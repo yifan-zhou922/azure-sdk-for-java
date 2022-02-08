@@ -11,7 +11,6 @@ import com.azure.cosmos.implementation.GoneException;
 import com.azure.cosmos.implementation.RequestTimeline;
 import com.azure.cosmos.implementation.RxDocumentServiceRequest;
 import com.azure.cosmos.implementation.UserAgentContainer;
-import com.azure.cosmos.implementation.clienttelemetry.ClientTelemetry;
 import com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdEndpoint;
 import com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdObjectMapper;
 import com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdRequestArgs;
@@ -89,7 +88,6 @@ public class RntbdTransportClient extends TransportClient {
     private final RntbdEndpoint.Provider endpointProvider;
     private final long id;
     private final Tag tag;
-    private boolean channelAcquisitionContextEnabled;
 
     // endregion
 
@@ -108,14 +106,12 @@ public class RntbdTransportClient extends TransportClient {
         final Configs configs,
         final ConnectionPolicy connectionPolicy,
         final UserAgentContainer userAgent,
-        final IAddressResolver addressResolver,
-        final ClientTelemetry clientTelemetry) {
+        final IAddressResolver addressResolver) {
 
         this(
             new Options.Builder(connectionPolicy).userAgent(userAgent).build(),
             configs.getSslContext(),
-            addressResolver,
-            clientTelemetry);
+            addressResolver);
     }
 
     RntbdTransportClient(final RntbdEndpoint.Provider endpointProvider) {
@@ -127,19 +123,16 @@ public class RntbdTransportClient extends TransportClient {
     RntbdTransportClient(
         final Options options,
         final SslContext sslContext,
-        final IAddressResolver addressResolver,
-        final ClientTelemetry clientTelemetry) {
+        final IAddressResolver addressResolver) {
 
         this.endpointProvider = new RntbdServiceEndpoint.Provider(
             this,
             options,
             checkNotNull(sslContext, "expected non-null sslContext"),
-            addressResolver,
-            clientTelemetry);
+            addressResolver);
 
         this.id = instanceCount.incrementAndGet();
         this.tag = RntbdTransportClient.tag(this.id);
-        this.channelAcquisitionContextEnabled = options.channelAcquisitionContextEnabled;
     }
 
     // endregion
@@ -236,9 +229,7 @@ public class RntbdTransportClient extends TransportClient {
                 response.setRequestPayloadLength(request.getContentLength());
                 response.setRntbdChannelTaskQueueSize(record.channelTaskQueueLength());
                 response.setRntbdPendingRequestSize(record.pendingRequestQueueSize());
-                if(this.channelAcquisitionContextEnabled) {
-                    response.setChannelAcquisitionTimeline(record.getChannelAcquisitionTimeline());
-                }
+                response.setChannelAcquisitionTimeline(record.getChannelAcquisitionTimeline());
             }
 
         })).onErrorMap(throwable -> {
@@ -272,9 +263,7 @@ public class RntbdTransportClient extends TransportClient {
             BridgeInternal.setRntbdPendingRequestQueueSize(cosmosException, record.pendingRequestQueueSize());
             BridgeInternal.setChannelTaskQueueSize(cosmosException, record.channelTaskQueueLength());
             BridgeInternal.setSendingRequestStarted(cosmosException, record.hasSendingRequestStarted());
-            if(this.channelAcquisitionContextEnabled) {
-                BridgeInternal.setChannelAcquisitionTimeline(cosmosException, record.getChannelAcquisitionTimeline());
-            }
+            BridgeInternal.setChannelAcquisitionTimeline(cosmosException, record.getChannelAcquisitionTimeline());
 
             return cosmosException;
         });

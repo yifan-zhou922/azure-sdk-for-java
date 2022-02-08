@@ -4,7 +4,6 @@
 package com.azure.cosmos.models;
 
 import com.azure.cosmos.CosmosAsyncContainer;
-import com.azure.cosmos.implementation.ImplementationBridgeHelpers;
 import reactor.core.publisher.Flux;
 
 /**
@@ -14,7 +13,7 @@ import reactor.core.publisher.Flux;
 public final class CosmosBulkOperationResponse<TContext> {
 
     private final CosmosItemOperation operation;
-    private CosmosBulkItemResponse response;
+    private final CosmosBulkItemResponse response;
     private final Exception exception;
     private final TContext batchContext;
 

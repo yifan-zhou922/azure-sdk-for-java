@@ -5,21 +5,16 @@ package com.azure.cosmos.rx;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
-import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.TestObject;
-import com.azure.cosmos.implementation.DatabaseForTest;
 import com.azure.cosmos.implementation.FailureValidator;
-import com.azure.cosmos.implementation.FeedResponseListValidator;
 import com.azure.cosmos.implementation.HttpConstants;
 import com.azure.cosmos.implementation.InternalObjectNode;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.ModelBridgeInternal;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.util.CosmosPagedFlux;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -40,11 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class DocumentCrudTest extends TestSuiteBase {
 
-    private String databaseIdForTest = DatabaseForTest.generateId();
-
     private CosmosAsyncClient client;
     private CosmosAsyncContainer container;
-    private CosmosAsyncDatabase database;
 
     @Factory(dataProvider = "clientBuildersWithDirect")
     public DocumentCrudTest(CosmosClientBuilder clientBuilder) {
@@ -61,7 +53,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         };
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void createDocument(String documentId) throws InterruptedException {
 
         InternalObjectNode properties = getDocumentDefinition(documentId);
@@ -75,7 +67,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(createObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void createLargeDocument(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
 
@@ -93,7 +85,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(createObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void createDocumentWithVeryLargePartitionKey(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
         StringBuilder sb = new StringBuilder();
@@ -113,7 +105,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(createObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void readDocumentWithVeryLargePartitionKey(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
         StringBuilder sb = new StringBuilder();
@@ -139,7 +131,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(readObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void createDocument_AlreadyExists(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
         container.createItem(docDefinition, new CosmosItemRequestOptions()).block();
@@ -151,7 +143,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(createObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void createDocumentTimeout(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
         Mono<CosmosItemResponse<InternalObjectNode>> createObservable = container.createItem(docDefinition, new CosmosItemRequestOptions()).timeout(Duration.ofMillis(1));
@@ -159,7 +151,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(createObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void readDocument(String documentId) throws InterruptedException {
 
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
@@ -180,7 +172,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(readObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void timestamp(String documentId) throws Exception {
         Instant before = Instant.now();
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
@@ -202,7 +194,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         assertThat(readDocument.getTimestamp()).isBeforeOrEqualTo(after);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void readDocument_DoesntExist(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
 
@@ -225,7 +217,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(readObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void deleteDocument(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
 
@@ -255,7 +247,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(readObservable, notFoundValidator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void deleteDocumentUsingEntity(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
 
@@ -284,7 +276,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(readObservable, notFoundValidator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void deleteDocument_undefinedPK(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = new InternalObjectNode();
         docDefinition.setId(documentId);
@@ -311,7 +303,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(readObservable, notFoundValidator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void deleteDocument_DoesntExist(String documentId) throws InterruptedException {
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
 
@@ -332,7 +324,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         validateItemFailure(deleteObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void replaceDocument(String documentId) throws InterruptedException {
         // create a document
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
@@ -359,7 +351,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(replaceObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void upsertDocument_CreateDocument(String documentId) throws Throwable {
         // create a document
         InternalObjectNode docDefinition = getDocumentDefinition(documentId);
@@ -377,7 +369,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(upsertObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
+    @Test(groups = { "simple" }, timeOut = TIMEOUT, dataProvider = "documentCrudArgProvider")
     public void upsertDocument_ReplaceDocument(String documentId) throws Throwable {
 
         InternalObjectNode properties = getDocumentDefinition(documentId);
@@ -401,7 +393,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         this.validateItemSuccess(readObservable, validator);
     }
 
-    @Test(groups = { "emulator" }, timeOut = TIMEOUT)
+    @Test(groups = { "simple" }, timeOut = TIMEOUT)
     public void upsertDocument_ReplaceDocumentWithPartitionKey() throws Throwable {
         TestObject item = TestObject.create();
         CosmosItemResponse<TestObject> response = container.createItem(item,  new PartitionKey(item.getMypk()), new CosmosItemRequestOptions()).block();
@@ -414,7 +406,7 @@ public class DocumentCrudTest extends TestSuiteBase {
         assertThat(replaceResponse.getItem()).isEqualTo(item);
     }
 
-    @Test(groups = {"emulator"}, timeOut = TIMEOUT)
+    @Test(groups = {"simple"}, timeOut = TIMEOUT)
     public void typedItems() throws Throwable {
         String docId = "1234";
         String partitionKey = UUID.randomUUID().toString();
@@ -451,53 +443,6 @@ public class DocumentCrudTest extends TestSuiteBase {
         compareTestObjs(newTestObject, resultObject);
     }
 
-    @Test(groups = {"emulator"}, timeOut = TIMEOUT)
-    public void deleteAllItemsByPartitionKey() throws Exception {
-        String pkValue1 = UUID.randomUUID().toString();
-        String pkValue2 = UUID.randomUUID().toString();
-
-        // item 1
-        TestObject properties1 = TestObject.create(pkValue1);
-        container.createItem(properties1).block();
-
-        // item 2
-        TestObject properties2 = TestObject.create(pkValue1);
-        container.createItem(properties2).block();
-
-
-        // item 3
-        TestObject properties3 = TestObject.create(pkValue2);
-        container.createItem(properties3).block();
-
-        // delete the items with partition key pk1
-        CosmosItemResponse<?> deleteResponse = container.deleteAllItemsByPartitionKey(
-            new PartitionKey(pkValue1), new CosmosItemRequestOptions()).block();
-
-        assertThat(deleteResponse.getStatusCode()).isEqualTo(200);
-
-        // verify that the items with partition key pkValue1 are deleted
-        CosmosPagedFlux<TestObject> feedResponseFlux1 =
-            container.readAllItems(
-                new PartitionKey(pkValue1),
-                new CosmosQueryRequestOptions(),
-                TestObject.class);
-
-        FeedResponseListValidator<TestObject> validator =
-            new FeedResponseListValidator.Builder<TestObject>().totalSize(0).build();
-        validateQuerySuccess(feedResponseFlux1.byPage(), validator, TIMEOUT);
-
-        CosmosPagedFlux<TestObject> feedResponseFlux2 =
-            container.readAllItems(
-                new PartitionKey(pkValue2),
-                new CosmosQueryRequestOptions(),
-                TestObject.class);
-
-        //verify that the item with the other partition Key pkValue2 is not deleted
-        validator =
-            new FeedResponseListValidator.Builder<TestObject>().totalSize(1).build();
-        validateQuerySuccess(feedResponseFlux2.byPage(), validator, TIMEOUT);
-    }
-
     private void compareTestObjs(TestObject newTestObject, TestObject resultObject) {
         assertThat(newTestObject.getId()).isEqualTo(resultObject.getId());
         assertThat(newTestObject.getMypk()).isEqualTo(resultObject.getMypk());
@@ -506,17 +451,15 @@ public class DocumentCrudTest extends TestSuiteBase {
     }
 
 
-    @BeforeClass(groups = { "emulator" }, timeOut = SETUP_TIMEOUT)
+    @BeforeClass(groups = { "simple" }, timeOut = SETUP_TIMEOUT)
     public void before_DocumentCrudTest() {
         assertThat(this.client).isNull();
         this.client = this.getClientBuilder().buildAsyncClient();
-        this.database = createDatabase(this.client, databaseIdForTest);
-        this.container = createCollection(this.client, databaseIdForTest, getCollectionDefinition());
+        this.container = getSharedMultiPartitionCosmosContainer(this.client);
     }
 
-    @AfterClass(groups = { "emulator" }, timeOut = SHUTDOWN_TIMEOUT, alwaysRun = true)
+    @AfterClass(groups = { "simple" }, timeOut = SHUTDOWN_TIMEOUT, alwaysRun = true)
     public void afterClass() {
-        safeDeleteDatabase(this.database);
         assertThat(this.client).isNotNull();
         this.client.close();
     }

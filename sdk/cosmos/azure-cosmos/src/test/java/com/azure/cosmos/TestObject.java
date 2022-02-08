@@ -4,6 +4,7 @@
 package com.azure.cosmos;
 
 import com.azure.cosmos.implementation.guava25.collect.ImmutableList;
+import com.azure.cosmos.rx.DocumentCrudTest;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,11 +27,7 @@ public class TestObject {
     }
 
     public static TestObject create() {
-        return create(UUID.randomUUID().toString());
-    }
-
-    public static TestObject create(String pkValue) {
-        return new TestObject(UUID.randomUUID().toString(), pkValue, ImmutableList.of(ImmutableList.of(5)), UUID.randomUUID().toString());
+        return new TestObject(UUID.randomUUID().toString(), UUID.randomUUID().toString(), ImmutableList.of(ImmutableList.of(5)), UUID.randomUUID().toString());
     }
 
     public String getId() {

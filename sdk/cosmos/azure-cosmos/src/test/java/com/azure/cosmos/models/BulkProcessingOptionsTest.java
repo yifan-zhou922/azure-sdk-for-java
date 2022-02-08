@@ -53,7 +53,7 @@ public class BulkProcessingOptionsTest {
                 .getBulkExecutionThresholdsAccessor()
                 .getPartitionScopeThresholds(thresholds);
         CosmosBulkExecutionOptions optionsWithThresholds =
-            new CosmosBulkExecutionOptions(null, thresholds, null);
+            new CosmosBulkExecutionOptions(null, thresholds);
 
         assertThat(thresholds).isSameAs(optionsWithThresholds.getThresholdsState());
         assertThat(partitionScopeThresholdsMap)

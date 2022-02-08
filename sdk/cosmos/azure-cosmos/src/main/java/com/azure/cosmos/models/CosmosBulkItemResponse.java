@@ -25,7 +25,7 @@ public final class CosmosBulkItemResponse {
 
     private final String eTag;
     private final double requestCharge;
-    private ObjectNode resourceObject;
+    private final ObjectNode resourceObject;
     private final int statusCode;
     private final Duration retryAfter;
     private final int subStatusCode;
@@ -198,12 +198,6 @@ public final class CosmosBulkItemResponse {
                 @Override
                 public ObjectNode getResourceObject(CosmosBulkItemResponse cosmosBulkItemResponse) {
                     return cosmosBulkItemResponse.getResourceObject();
-                }
-
-                @Override
-                public void setResourceObject(CosmosBulkItemResponse cosmosBulkItemResponse,
-                                              ObjectNode objectNode) {
-                    cosmosBulkItemResponse.resourceObject = objectNode;
                 }
             });
     }
