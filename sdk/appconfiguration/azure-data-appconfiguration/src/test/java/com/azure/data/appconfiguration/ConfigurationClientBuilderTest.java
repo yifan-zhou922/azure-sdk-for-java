@@ -7,11 +7,9 @@ import com.azure.core.exception.HttpResponseException;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpPipelineBuilder;
 import com.azure.core.http.netty.NettyAsyncHttpClientBuilder;
-import com.azure.core.http.policy.ExponentialBackoffOptions;
 import com.azure.core.http.policy.FixedDelay;
 import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.TimeoutPolicy;
 import com.azure.core.test.TestBase;
@@ -128,18 +126,6 @@ public class ConfigurationClientBuilderTest extends TestBase {
             .addPolicy(new TimeoutPolicy(Duration.ofMillis(1))).buildClient();
 
         assertThrows(RuntimeException.class, () -> client.setConfigurationSetting(key, null, value));
-    }
-
-    @Test
-    @DoNotRecord
-    public void throwIfBothRetryOptionsAndRetryPolicyIsConfigured() {
-        final ConfigurationClientBuilder clientBuilder = new ConfigurationClientBuilder()
-            .connectionString(connectionString)
-            .retryOptions(new RetryOptions(new ExponentialBackoffOptions()))
-            .retryPolicy(new RetryPolicy())
-            .addPolicy(new TimeoutPolicy(Duration.ofMillis(1)));
-
-        assertThrows(IllegalStateException.class, clientBuilder::buildClient);
     }
 
     @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
