@@ -53,13 +53,6 @@ function UpdateDependencyOfClientSDK() {
 function GetAllArtifactsFromMaven([String]$GroupId) {
     $webResponseObj = Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/azure"
     $azureComArtifactIds = $webResponseObj.Links.HRef | Where-Object { ($_ -like 'azure-*') -and ($IgnoreList -notcontains $_) } |  ForEach-Object { $_.substring(0, $_.length - 1) }
-
-    # $ignoreMavenArtifactList = @(
-    #     "azure-client-sdk-parent",
-    #     "azure-core-test",
-    #     "azure-sdk-all"
-    #     "azure-sdk-bom",
-    #     "")
     return $azureComArtifactIds | Where-Object {($_ -like "azure-*") -and !($_ -like "azure-spring")}
 }
 
