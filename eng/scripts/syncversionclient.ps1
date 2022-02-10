@@ -13,24 +13,9 @@ $EngVersioningDir = Join-Path $EngDir "versioning"
 $EngCommonScriptsDir = Join-Path $EngDir "common" "scripts"
 
 . (Join-Path $EngCommonScriptsDir common.ps1)
-
-class MavenArtifactInfo {
-    [String] $GroupId
-    [String] $Name
-    [String] $LatestGAOrPatchVersion
-    [String] $LatestRealeasedVersion
-
-    MavenArtifactInfo($Name, $LatestGAOrPatchVersion, $LatestRealeasedVersion) {
-        $this.Name = $Name
-        $this.LatestGAOrPatchVersion = $LatestGAOrPatchVersion
-        $this.LatestRealeasedVersion = $LatestRealeasedVersion
-        $this.GroupId = 'com.azure'
-    }
-}
+. (Join-Path $PSScriptRoot bomhelpers.ps1)
 
 function UpdateDependencyVersion([MavenArtifactInfo]$ArtifactInfo, [EngSysVersionInfo]$EngSysVersionInfo) {
-    $setVersionFilePath = Join-Path $EngVersioningDir "set_versions.py"
-
     $version = $ArtifactInfo.LatestGAOrPatchVersion
     $sdkName = $ArtifactInfo.Name
     $groupId = $ArtifactInfo.GroupId
@@ -40,34 +25,8 @@ function UpdateDependencyVersion([MavenArtifactInfo]$ArtifactInfo, [EngSysVersio
         return
     }
 
-    $cmdOutput = python $setVersionFilePath --bt client --new-version $version --ar $sdkName --gi $groupId
-    $cmdOutput = python $setVersionFilePath --bt client --ar $sdkName --gi $groupId --increment-version
-    $cmdOutput = python $setVersionFilePath --bt client --new-version $engsysCurrentVersion --ar $sdkName --gi $groupId
-}
-
-function UpdateDependencyOfClientSDK() {
-    $UpdateVersionFilePath = Join-Path $EngVersioningDir "update_versions.py"
-    $cmdOutput = python $UpdateVersionFilePath --ut all --bt client --sr
-}
-
-function GetAllArtifactsFromMaven([String]$GroupId) {
-    $webResponseObj = Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/azure"
-    $azureComArtifactIds = $webResponseObj.Links.HRef | Where-Object { ($_ -like 'azure-*') -and ($IgnoreList -notcontains $_) } |  ForEach-Object { $_.substring(0, $_.length - 1) }
-    return $azureComArtifactIds | Where-Object {($_ -like "azure-*") -and !($_ -like "azure-spring")}
-}
-
-function GetVersionInfoForAnArtifactId([String]$ArtifactId){
-    $mavenMetadataUrl = "https://repo1.maven.org/maven2/com/azure/$($ArtifactId)/maven-metadata.xml"
-    $webResponseObj = Invoke-WebRequest -Uri $mavenMetadataUrl
-    $versions = ([xml]$webResponseObj.Content).metadata.versioning.versions.version
-    $semVersions = $versions | ForEach-Object { [AzureEngSemanticVersion]::ParseVersionString($_) }
-    $sortedVersions = [AzureEngSemanticVersion]::SortVersions($semVersions)
-    $latestReleasedVersion = $sortedVersions[0].RawVersion
-    $latestPatchOrGAVersion = $sortedVersions | Where-Object { !($_.IsPrerelease) } | ForEach-Object { $_.RawVersion } | Select-Object -First 1
-    
-    $mavenArtifactInfo = [MavenArtifactInfo]::new($ArtifactId, $latestPatchOrGAVersion, $latestReleasedVersion)
-
-    return $mavenArtifactInfo
+    UpdateDependencyVersion -GroupId $groupId -ArtifactName $sdkName -Version $version
+    UpdateCurrentVersion -GroupId $groupId -ArtifactName $sdkName -Version $engsysCurrentVersion
 }
 
 class EngSysVersionInfo{
@@ -131,9 +90,5 @@ function SyncVersionClientFile([String]$GroupId) {
         UpdateDependencyOfClientSDK
     }
 }
-
-
-
-
 
 

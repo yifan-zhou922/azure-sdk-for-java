@@ -53,9 +53,10 @@ param(
   [boolean]$CreateNewBranch = $false
 )
 
-. Join-Path ${PSScriptRoot} "common.ps1"
-. Join-Path ${PSScriptRoot} "Helpers" "ApiView-Helpers.ps1"
-. Join-Path ${PSScriptRoot} "eng" "scripts" "syncversionclient.ps1"
+$RepoRoot = Resolve-Path "${PSScriptRoot}..\..\.."
+. (Join-Path $RepoRoot "eng" "common" "scripts" common.ps1)
+. (Join-Path ${PSScriptRoot} syncversionclient.ps1)
+. (Join-Path $PSScriptRoot bomhelpers.ps1)
 
 function TestPathThrow($Path, $PathName) {
   if (!(Test-Path $Path)) {
@@ -78,32 +79,28 @@ function GetDependencyToVersion($PomFilePath) {
 }
 
 function GetChangeLogContent($NewDependencyNameToVersion, $OldDependencyNameToVersion) {
-  $Content = @()
-  $Content += ""
-  $Content += "### Other Changes"
-  $Content += ""
-  $Content += "#### Dependency Updates"
-  $Content += ""
+  $content = @()
+  $content += ""
+  $content += "### Other Changes"
+  $content += ""
+  $content += "#### Dependency Updates"
+  $content += ""
   
   foreach ($key in $OldDependencyNameToVersion.Keys) {
     $oldVersion = $($OldDependencyNameToVersion[$key]).Trim()
     $newVersion = $($NewDependencyNameToVersion[$key]).Trim()
     if ($oldVersion -ne $newVersion) {
-      $Content += "- Upgraded ``$key`` from ``$oldVersion`` to version ``$newVersion``."
+      $content += "- Upgraded ``$key`` from ``$oldVersion`` to version ``$newVersion``."
     }
   }
   
-  $Content += ""
+  $content += ""
+
+  return $content
 }
 
 function GitCommit($Message) {
-  $cmdOutput = git add $ArtifactDirPath
-  if ($LASTEXITCODE -ne 0) {
-    LogError "Could not stage the changes done to the $($ArtifactDirPath)"
-    exit 1
-  }
- 
-  $cmdOutput = git commit -m $Message
+  $cmdOutput = git commit -a -m $Message
   if ($LASTEXITCODE -ne 0) {
     LogError "Could not commit the changes locally.Exiting..."
     exit 1
@@ -136,23 +133,10 @@ if ([String]::IsNullOrWhiteSpace($ReleaseVersion)) {
 }
 
 
-$ParsedSemver = [AzureEngSemanticVersion]::ParseVersionString($ReleaseVersion)
-if(!$ParsedSemver) {
-  LogError "Unexpected release version:$($ReleaseVersion).Exiting..."
-  exit 1
-}
-
-$PatchVersion = "$($ParsedSemver.Major).$($ParsedSemver.Minor).$($ParsedSemver.Patch + 1)"
+$PatchVersion = GetPatchVersion -ReleaseVersion $ReleaseVersion
 Write-Output "PatchVersion is: $PatchVersion"
 
-$MainRemoteUrl = 'https://github.com/Azure/azure-sdk-for-java.git'
-foreach ($rem in git remote show) {
-  $remoteUrl = git remote get-url $rem
-  if ($remoteUrl -eq $mainRemoteUrl) {
-    $RemoteName = $rem
-  }
-}
-
+$RemoteName = GetRemoteName
 if(!$RemoteName) {
 LogError "Could not compute the remote name."
 exit 1
@@ -160,10 +144,12 @@ exit 1
 Write-Output "RemoteName is: $RemoteName"
 
 if (!$BranchName) {
-  $ArtifactNameToLower = $ArtifactName.ToLower()
-  # $guid = [guid]::NewGuid().Guid
-  # $BranchName = "release/$($ArtifactNameToLower)_$($PatchVersion)_$($guid)"
-  $BranchName = "release/$($ArtifactNameToLower)_$($PatchVersion)"
+  $BranchName = GetBranchName -ArtifactName $ArtifactName -Version $PatchVersion
+
+  if(!$BranchName) {
+    LogError "Could not compute the branch name."
+    exit 1    
+  }
   Write-Output "Using branch: $($BranchName)"
 }
 
@@ -234,8 +220,7 @@ if ($CurrentPackageVersion -ne $ReleaseVersion) {
     LogError "Failed to create new changelog entry for $($ArtifactName)"
     exit 1
   }
-	
-	
+
   $cmdOutput = Set-ChangeLogContent -ChangeLogLocation $ChangelogPath -ChangeLogEntries $ChangeLogEntries
   if ($LASTEXITCODE -ne 0) {
     LogError "Could not update the changelog at $($ChangelogPath). Exiting..."
@@ -249,4 +234,7 @@ if ($CurrentPackageVersion -ne $ReleaseVersion) {
       LogError "Could not push the changes to $($RemoteName)\$($BranchName). Exiting..."
       exit 1
     }
+    Write-Output "Pushed the changes to remote:$($RemoteName), Branch:$($BranchName))"
   }
+
+Write-Output "Patch generation completed successfully."
