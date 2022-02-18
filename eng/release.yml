@@ -5,7 +5,7 @@ parameters:
     type: object
 
 stages:
-  - ${{ each package in parameters.Packages }:
+  - ${{ each package in parameters.Packages }}:
     - template: /eng/pipelines/templates/stages/meta-ci.yml
       parameters:
         Artifacts: ${{ package.Artifacts }}
