@@ -1,4 +1,14 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
 
-extends:
-  template: /sdk/core/ci.yml
+parameters:
+  - name: Packages
+    type: object
+
+stages:
+  - ${{ each package in parameters.Packages }:
+    - template: /eng/pipelines/templates/stages/meta-ci.yml
+      parameters:
+        Artifacts: ${{ package.Artifacts }}
+        ServiceDirectory: ${{ package.ServiceDirectory }}
+        SDKType: ${{ coalesce(package.SDKType, 'client') }}
+        BuildDependsOn: ${{ package.BuildDependsOn }}
