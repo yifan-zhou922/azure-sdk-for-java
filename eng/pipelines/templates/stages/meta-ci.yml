@@ -53,6 +53,7 @@ parameters:
 stages:
   - stage: Build_${{ parameters.ServiceDirectory }}
     displayName: Build ${{ parameters.ServiceDirectory }}
+    dependsOn: ${{ parameters.BuildDependsOn }}
     jobs:
     - template: /eng/pipelines/templates/jobs/ci.yml
       parameters:

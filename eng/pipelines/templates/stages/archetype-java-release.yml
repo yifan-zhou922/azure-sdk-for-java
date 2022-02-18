@@ -350,7 +350,7 @@ stages:
   - ${{if ne(parameters.EnableIntegrationStage, false)}}:
     - stage: Integration_${{ parameters.ServiceDirectory }}
       displayName: Integration ${{ parameters.ServiceDirectory }}
-      dependsOn: Signing
+      dependsOn: Sign_${{ parameters.ServiceDirectory }}
       jobs:
       - job: PublishPackages
         condition: or(eq(variables['SetDevVersion'], 'true'), and(eq(variables['Build.Reason'],'Schedule'), eq(variables['System.TeamProject'], 'internal')))
