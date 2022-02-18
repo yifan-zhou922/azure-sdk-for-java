@@ -64,7 +64,7 @@ stages:
   # pipeline completes.
   - ${{if and(in(variables['Build.Reason'], 'Manual', ''), eq(variables['System.TeamProject'], 'internal'))}}:
     - ${{ each artifact in parameters.Artifacts }}:
-      - stage: ${{ artifact.name }}
+      - stage: ${{ artifact.safeName }}
         displayName: 'Release ${{ artifact.name }}'
         dependsOn: Sign_${{ parameters.ServiceDirectory }}
         condition: and(succeeded(), ne(variables['SetDevVersion'], 'true'), ne(variables['Skip.Release'], 'true'), ne(variables['Build.Repository.Name'], 'Azure/azure-sdk-for-java-pr'))
