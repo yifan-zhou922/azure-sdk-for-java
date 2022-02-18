@@ -57,7 +57,7 @@ parameters:
     default: true
 
 jobs:
-  - job: 'Build2'
+  - job: 'Build'
 
     variables:
       - template: ../variables/globals.yml

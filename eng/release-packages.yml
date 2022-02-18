@@ -44,7 +44,7 @@ extends:
             groupId: com.azure
             safeName: azurecoretracingopentelemetry
       - ServiceDirectory: mixedreality
-        BuildDependsOn: core2
+        BuildDependsOn: core
         Artifacts:
           - name: azure-mixedreality-authentication
             groupId: com.azure

@@ -84,7 +84,6 @@ stages:
           TestGoals: 'verify'
           TestOptions: '-am'
         CITest: ${{ parameters.CITest }}
-        BuildDependsOn: ${{ parameters.BuildDependsOn }}
 
   - template: archetype-java-release.yml
     parameters:
