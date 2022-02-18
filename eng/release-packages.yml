@@ -46,6 +46,7 @@ extends:
       - ServiceDirectory: mixedreality
         BuildDependsOn:
           - azurecore
+          - azurecorehttpnetty
         Artifacts:
           - name: azure-mixedreality-authentication
             groupId: com.azure
