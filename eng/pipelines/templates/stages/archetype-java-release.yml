@@ -26,7 +26,8 @@ stages:
   # where appropriate and also meeting any other signing requirements for particular artifacts,
   # in this case we do GPG signing in order to publish to Maven Central. At the moment signing
   # is protected by an approval check but this may be removed in the future.
-  - stage: Signing
+  - stage: Sign_${{ parameters.ServiceDirectory }}
+    displayName: Sign ${{ parameters.ServiceDirectory }}
     dependsOn: ${{parameters.DependsOn}}
     jobs:
       - deployment: SignPackage
@@ -63,9 +64,9 @@ stages:
   # pipeline completes.
   - ${{if and(in(variables['Build.Reason'], 'Manual', ''), eq(variables['System.TeamProject'], 'internal'))}}:
     - ${{ each artifact in parameters.Artifacts }}:
-      - stage:
-        displayName: 'Release: ${{artifact.name}}'
-        dependsOn: Signing
+      - stage: ${{ artifact.name }}
+        displayName: 'Release ${{ artifact.name }}'
+        dependsOn: Sign_${{ parameters.ServiceDirectory }}
         condition: and(succeeded(), ne(variables['SetDevVersion'], 'true'), ne(variables['Skip.Release'], 'true'), ne(variables['Build.Repository.Name'], 'Azure/azure-sdk-for-java-pr'))
         jobs:
           - job: VerifyReleaseVersion
@@ -256,14 +257,14 @@ stages:
                             - metadata/
                           DocValidationImageId: "$(DocValidationImageId)"
                       - template: /eng/pipelines/templates/steps/fetch-package-list.yml
-                        parameters: 
+                        parameters:
                           JavaDocJarLocation: $(Pipeline.Workspace)/${{parameters.ArtifactName}}
                           ArtifactName: ${{artifact.name}}
                           TargetBranch: $(TargetBranchName)
                           DocRepoLocation: $(DocRepoLocation)
                           TargetDocRepoName: ${{parameters.TargetDocRepoName}}
                           TargetDocRepoOwner: "Azure"
-                          
+
           - ${{if ne(artifact.skipPublishDocGithubIo, 'true')}}:
             - deployment: PublishDocs
               displayName: Publish Docs to GitHubIO Blob Storage
@@ -416,7 +417,7 @@ stages:
         steps:
           - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
             parameters:
-              SkipDefaultCheckout: true 
+              SkipDefaultCheckout: true
               Paths:
                 - sdk/**/*.md
                 - .github/CODEOWNERS
@@ -458,7 +459,7 @@ stages:
                   DocValidationImageId: "$(DocValidationImageId)"
 
               - template: /eng/pipelines/templates/steps/fetch-package-list.yml
-                parameters: 
+                parameters:
                   JavaDocJarLocation: $(Pipeline.Workspace)/${{parameters.ArtifactName}}
                   ArtifactName: ${{artifact.name}}
                   TargetBranch: $(TargetBranchName)
