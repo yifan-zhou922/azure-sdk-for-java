@@ -43,9 +43,6 @@ parameters:
 - name: AdditionalLintingOptions
   type: string
   default: ''
-- name: CITest
-  type: boolean
-  default: true
 - name: BuildDependsOn
   type: object
   default: ''
@@ -60,30 +57,7 @@ stages:
         ServiceDirectory: ${{ parameters.ServiceDirectory }}
         SDKType: ${{ parameters.SDKType }}
         Artifacts: ${{ parameters.Artifacts }}
-        AdditionalModules: ${{ parameters.AdditionalModules }}
-        SkipAggregateReports: ${{ parameters.SkipAggregateReports }}
-        MatrixConfigs:
-          - ${{ each config in parameters.MatrixConfigs }}:
-            -  ${{ config }}
-          - ${{ each config in parameters.AdditionalMatrixConfigs }}:
-            -  ${{ config }}
-        MatrixFilters:
-          - ${{ each filter in parameters.MatrixFilters }}:
-            - ${{ filter }}
-          # Skip TestFromSource jobs for SDKType data
-          - ${{ if eq(parameters.SDKType, 'data') }}:
-            - TestFromSource=^(?!true).*
-        MatrixReplace:
-          - ${{ each replacement in parameters.MatrixReplace }}:
-            - ${{ replacement }}
-
-          - AZURE_TEST.*=.*/
-        PreBuildSteps: ${{ parameters.PreBuildSteps }}
-        AdditionalLintingOptions: ${{ parameters.AdditionalLintingOptions }}
-        ${{ if eq(parameters.SDKType, 'data') }}:
-          TestGoals: 'verify'
-          TestOptions: '-am'
-        CITest: ${{ parameters.CITest }}
+        CITest: false
 
   - template: archetype-java-release.yml
     parameters:
@@ -94,4 +68,3 @@ stages:
       Artifacts: ${{ parameters.Artifacts }}
       ArtifactName: packages_${{ parameters.ServiceDirectory }}
       TargetDocRepoName: ${{ parameters.TargetDocRepoName }}
-

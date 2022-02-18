@@ -13,7 +13,7 @@ parameters:
 
 stages:
   - ${{ each package in parameters.Packages }}:
-    - template: /eng/pipelines/templates/stages/meta-ci.yml
+    - template: /eng/pipelines/templates/stages/archetype-java-meta-release.yml
       parameters:
         Artifacts: ${{ package.Artifacts }}
         ServiceDirectory: ${{ package.ServiceDirectory }}
