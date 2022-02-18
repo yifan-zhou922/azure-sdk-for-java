@@ -1,4 +1,4 @@
-stages:
+extends:
   - template: /eng/release.yml
     parameters:
       Packages:
