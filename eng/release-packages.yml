@@ -56,7 +56,6 @@ extends:
       - ServiceDirectory: remoterendering
         BuildDependsOn:
           - azuremixedrealityauthentication
-          - azureresourcemanagermixedreality
         Artifacts:
           - name: azure-mixedreality-remoterendering
             groupId: com.azure
