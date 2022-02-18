@@ -55,13 +55,9 @@ parameters:
   - name: CITest
     type: boolean
     default: true
-  - name: BuildDependsOn
-    type: object
-    default: ''
 
 jobs:
-  - job: 'Build'
-    dependsOn: ${{ parameters.BuildDependsOn }}
+  - job: 'Build2'
 
     variables:
       - template: ../variables/globals.yml
