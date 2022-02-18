@@ -39,6 +39,7 @@ stages:
           CITest: false
 
       - deployment: SignPackage
+        dependsOn: Build
         environment: esrp
         timeoutInMinutes: 20
         variables:
