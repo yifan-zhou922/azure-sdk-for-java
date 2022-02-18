@@ -348,7 +348,8 @@ stages:
                           CloseAfterOpenForTesting: '${{ parameters.TestPipeline }}'
 
   - ${{if ne(parameters.EnableIntegrationStage, false)}}:
-    - stage: Integration
+    - stage: Integration_${{ parameters.ServiceDirectory }}
+      displayName: Integration ${{ parameters.ServiceDirectory }}
       dependsOn: Signing
       jobs:
       - job: PublishPackages
