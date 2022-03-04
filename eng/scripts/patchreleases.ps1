@@ -143,6 +143,61 @@ function UpdateCIInformation($ArtifactsToPatch, $ArtifactInfos) {
     }
 }
 
+function CreateReleaseYaml($ArtifactsToPatch, [hashtable]$ArtifactInfos) {
+    $repoRoot = Resolve-Path "${PSScriptRoot}../../.."
+    $releaseYmlFile = Join-Path $repoRoot "eng" "release-packages.yml"
+    $release = Get-Content $releaseYmlFile | ConvertFrom-Yaml
+
+    $oldPackages = $release.extends.parameters.Packages
+
+    $packages = [System.Collections.ArrayList]::new()
+    $serviceDirectoryGroups = $ArtifactsToPatch.Keys | Group-Object -Property { $ArtifactInfos[$_].ServiceDirectoryName } -AsHashTable
+
+    foreach ($serviceDirectory in $serviceDirectoryGroups.Keys) {
+        $artifacts = @()
+        $artifactIds = $serviceDirectoryGroups[$serviceDirectory]
+        $allDeps = @()
+        foreach ($artifactId in $artifactIds) {
+            $safeName = $artifactId -replace '[-]'
+            $artifacts += @{
+                "name"     = $artifactId
+                "groupId"  = "com.azure"
+                "safeName" = $safeName
+            }
+            
+            foreach ($dep in $ArtifactInfos[$artifactId].Dependencies.Keys) {
+                if ($ArtifactsToPatch.ContainsKey($dep)) {
+                    if($ArtifactInfos[$dep].ServiceDirectoryName -ne $serviceDirectory) {
+                        $dep = $dep.Replace('-', '')
+                        $allDeps += $dep
+                    }
+                }
+            }
+        }
+
+        $allDeps = $allDeps | Select-Object -Unique
+        $releaseYmlObject = @{}
+        if ($allDeps) {
+            $releaseYmlObject = [ordered]@{
+                "ServiceDirectory" = $serviceDirectory
+                "BuildDependsOn"   = $allDeps
+                "Artifacts"        = $artifacts
+            }
+        }
+        else {
+            $releaseYmlObject = [ordered]@{
+                "ServiceDirectory" = $serviceDirectory
+                "Artifacts"        = $artifacts
+            }
+        }
+        $packages += $releaseYmlObject
+    }
+
+    $release.extends.parameters.Packages = $packages
+    $yaml = ConvertTo-Yaml $release 
+    $yaml | Out-File $releaseYmlFile
+}
+
 function FindAllArtifactsToBePatched([String]$DependencyId, [String]$PatchVersion, [hashtable]$ArtifactInfos) {
     $artifactsToPatch = @{}
 
@@ -173,10 +228,10 @@ function FindAllArtifactsToBePatched([String]$DependencyId, [String]$PatchVersio
     return $artifactsToPatch
 }
 
-function GetPatchSets($artifactsToPatch, [hashtable]$ArtifactInfos) {
+function GetPatchSets($ArtifactsToPatch, [hashtable]$ArtifactInfos) {
     $patchSets = @()
 
-    foreach ($artifactToPatch in $artifactsToPatch.Keys) {
+    foreach ($artifactToPatch in $ArtifactsToPatch.Keys) {
         $patchDependencies = @{}
         $dependencies = $artifactInfos[$artifactToPatch].Dependencies
         $dependencies.Keys | Where-Object { $null -ne $artifactsToPatch[$_] } | ForEach-Object { $patchDependencies[$_] = $_ }
@@ -251,10 +306,10 @@ $AzCoreArtifactId = "azure-core"
 $AzCoreVersion = $ArtifactInfos[$AzCoreArtifactId].LatestGAOrPatchVersion
 
 # For testing only.
-# $AzCoreVersion = "1.26.0"
-# $ArtifactInfos[$AzCoreArtifactId].FutureReleasePatchVersion = $AzCoreVersion
-# $AzCoreNettyArtifactId = "azure-core-http-netty"
-# $ArtifactInfos[$AzCoreNettyArtifactId].Dependencies[$AzCoreArtifactId] = $AzCoreVersion
+$AzCoreVersion = "1.26.0"
+$ArtifactInfos[$AzCoreArtifactId].FutureReleasePatchVersion = $AzCoreVersion
+$AzCoreNettyArtifactId = "azure-core-http-netty"
+$ArtifactInfos[$AzCoreNettyArtifactId].Dependencies[$AzCoreArtifactId] = $AzCoreVersion
 
 $ArtifactsToPatch = FindAllArtifactsToBePatched -DependencyId $AzCoreArtifactId -PatchVersion $AzCoreVersion -ArtifactInfos $ArtifactInfos
 $ReleaseSets = GetPatchSets -ArtifactsToPatch $ArtifactsToPatch -ArtifactInfos $ArtifactInfos
@@ -265,6 +320,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 UpdateCIInformation -ArtifactsToPatch $ArtifactsToPatch.Keys -ArtifactInfos $ArtifactInfos
+CreateReleaseYaml -ArtifactsToPatch $ArtifactsToPatch -ArtifactInfos $ArtifactInfos
 
 $fileContent = [System.Text.StringBuilder]::new()
 $fileContent.AppendLine("BranchName;ArtifactId");
@@ -272,8 +328,13 @@ Write-Output "Preparing patch releases for BOM updates."
 ## We now can run the generate_patch script for all those dependencies.
 foreach ($patchSet in $ReleaseSets) {
     try {
+        $searchArtifact = $false
         $patchInfos = [ArtifactPatchInfo[]]@()
         foreach ($artifactId in $patchSet.Keys) {
+            if ($artifactId.Contains("storage")) {
+                $searchArtifact = $true
+            }
+
             $arInfo = $ArtifactInfos[$artifactId]
             $patchInfo = [ArtifactPatchInfo]::new()
             $patchInfo = ConvertToPatchInfo -ArInfo $arInfo
@@ -281,9 +342,12 @@ foreach ($patchSet in $ReleaseSets) {
             UpdateDependenciesInVersionClient -ArtifactId $artifactId -ArtifactInfos $ArtifactInfos
         }
 
-        $remoteBranchName = GetBranchName -ArtifactId "PatchSet"
-        GeneratePatches -ArtifactPatchInfos $patchInfos -BranchName $remoteBranchName -RemoteName $RemoteName -GroupId $GroupId
-        $fileContent.AppendLine("$remoteBranchName;$($artifactIds);");
+        if ($searchArtifact) {
+            $remoteBranchName = GetBranchName -ArtifactId "PatchSet"
+            GeneratePatches -ArtifactPatchInfos $patchInfos -BranchName $remoteBranchName -RemoteName $RemoteName -GroupId $GroupId
+            $fileContent.AppendLine("$remoteBranchName;$($artifactIds);");
+        }
+    
     }
     finally {
         $cmdOutput = git checkout $CurrentBranchName
