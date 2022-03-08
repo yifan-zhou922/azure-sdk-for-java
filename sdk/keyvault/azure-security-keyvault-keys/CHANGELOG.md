@@ -1,39 +1,5 @@
 # Release History
 
-## 4.4.0-beta.8 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-- Changed `getRandomBytes` operations in `KeyClient` and `KeyAsyncClient` to return `byte[]` instead of `RandomBytes`.
-- Removed the `RandomBytes` class.
-
-### Bugs Fixed
-
-### Other Changes
-
-## 4.4.0-beta.7 (2022-02-11)
-
-### Features added
-- Implemented new traits (micro-interfaces) in `KeyClientBuilder`, `CryptographyClientBuilder` and `KeyEncryptionKeyClientBuilder`. This makes the experience of using client builders more consistent across libraries in the Azure SDK for Java.
-- Added the `immutable` property to `KeyReleasePolicy`.
-
-### Breaking Changes
-- Removed the `exports` statement for `com.azure.security.keyvault.keys.implementation` in `module-info.java`.
-- `KeyReleasePolicy`
-    - Renamed `data` to `encodedPolicy` and changed its type from `byte[]` to `BinaryData`.
-    - Flattened `KeyRotationPolicyProperties` into `KeyRotationPolicy`.
-    - Renamed `expiryTime` to `expiresIn`.
-- Renamed `target` to `targetAttestationToken` in `releaseKey` APIs.
-- Removed `KeyExportRequestParameters` as the `export` operations will be pushed to a future release.
-- Renamed `KeyRotationLifetimeAction`'s `type` to `action`, to align with existing similar APIs in Key Vault Certificates.
-
-### Other Changes
-
-#### Dependency Updates
-- Upgraded `azure-core` dependency to `1.25.0`
-- Upgraded `azure-core-http-netty` dependency to `1.11.7`
-
 ## 4.3.7 (2022-02-11)
 
 ### Other Changes
@@ -42,14 +8,6 @@
 - Upgraded `azure-core` dependency to `1.25.0`
 - Upgraded `azure-core-http-netty` dependency to `1.11.7`
 
-## 4.4.0-beta.6 (2022-01-13)
-
-### Other Changes
-
-#### Dependency Updates
-- Upgraded `azure-core` dependency to `1.24.1`
-- Upgraded `azure-core-http-netty` dependency to `1.11.6`
-
 ## 4.3.6 (2022-01-12)
 
 ### Other Changes
@@ -57,18 +15,6 @@
 #### Dependency Updates
 - Upgraded `azure-core` dependency to `1.24.1`
 - Upgraded `azure-core-http-netty` dependency to `1.11.6`
-
-## 4.4.0-beta.5 (2021-11-12)
-
-### Features Added
-
-- Added support for multi-tenant authentication in clients.
-
-### Other Changes
-
-#### Dependency Updates
-- Upgraded `azure-core` dependency to `1.22.0`
-- Upgraded `azure-core-http-netty` dependency to `1.11.2`
 
 ## 4.3.5 (2021-11-12)
 
@@ -82,30 +28,7 @@
 - Upgraded `azure-core` dependency to `1.22.0`
 - Upgraded `azure-core-http-netty` dependency to `1.11.2`
 
-## 4.4.0-beta.4 (2021-10-07)
-
-### Features Added
-- Added new functions to key clients to enable key rotation:
-  - `KeyClient`
-    - `rotateKey(String name)`
-    - `rotateKeyWithResponse(String name, Context context)`
-    - `getKeyRotationPolicy(String name)`
-    - `getKeyRotationPolicyWithResponse(String name, Context context)`
-    - `updateKeyRotationPolicy(String name, KeyRotationPolicyProperties keyRotationPolicyProperties)`
-    - `updateKeyRotationPolicyWithResponse(String name, KeyRotationPolicyProperties keyRotationPolicyProperties, Context context)`
-  - `KeyAsyncClient`
-    - `rotateKey(String name)`
-    - `rotateKeyWithResponse(String name)`
-    - `getKeyRotationPolicy(String name)`
-    - `getKeyRotationPolicyWithResponse(String name)`
-    - `updateKeyRotationPolicy(String name, KeyRotationPolicyProperties keyRotationPolicyProperties)`
-    - `updateKeyRotationPolicyWithResponse(String name, KeyRotationPolicyProperties keyRotationPolicyProperties)`
-- Added convenience methods to create cryptography clients using key clients:
-  - `KeyClient.getCryptographyClient(String keyName)`
-  - `KeyClient.getCryptographyClient(String keyName, String keyVersion)`
-  - `KeyAsyncClient.getCryptographyAsyncClient(String keyName)`
-  - `KeyAsyncClient.getCryptographyAsyncClient(String keyName, String keyVersion)`
-- `CryptographyClientBuilder` does not require `keyIdentifier` to a include a key version. If no version is provided, cryptographic operations will be made using the latest version of the key.
+## 4.3.4 (2021-10-06)
 
 ### Bugs Fixed
 - Fixed an issue that made clients send unnecessary unauthorized requests to obtain a bearer challenge from the service even when already possessing a valid bearer token.
@@ -118,21 +41,6 @@
 - Upgraded `azure-core` dependency to `1.21.0`
 - Upgraded `azure-core-http-netty` dependency to `1.11.1`
 
-## 4.3.4 (2021-10-06)
-
-### Bugs Fixed
-- Fixed an issue that made clients send unnecessary unauthorized requests to obtain a bearer challenge from the service even when already possessing a valid bearer token.
-- Fixed issue that prevented creating a `CryptographyClient` or `CryptographyAsyncClient` with a key identifier that does not contain a key version.
-- Fixed issue that made `createOctKey()` operations ignore a `keySize` set in `CreateOctKeyOptions`, making said keys be created with the default service key size instead.
-
-## 4.4.0-beta.3 (2021-09-10)
-
-### Other Changes
-
-#### Dependency Updates
-- Upgraded `azure-core` dependency to `1.20.0`
-- Upgraded `azure-core-http-netty` dependency to `1.11.0`
-
 ## 4.3.3 (2021-09-10)
 
 ### Other Changes
@@ -141,21 +49,6 @@
 - Upgraded `azure-core` dependency to `1.20.0`
 - Upgraded `azure-core-http-netty` dependency to `1.11.0`
 
-## 4.4.0-beta.2 (2021-08-13)
-
-### Features Added
-- To support Secure Key Release for Key Vault and Managed HSM, added `Exportable` and `ReleasePolicy` to the following classes:
-  - `CreateKeyOptions` and its children classes: `CreateEcKeyOptions`, `CreateOctKeyOptions` and `CreateRsaKeyOptions`.
-  - `ImportKeyOptions`
-  - `KeyProperties`
-- Added `releaseKey()` and `releaseKeyWithResponse()` operations to `KeyClient` and `KeyAsyncClient` to securely release a key for Key Vault and Managed HSM.
-
-### Other Changes
-
-#### Dependency Updates
-- Upgraded `azure-core` dependency to `1.19.0`
-- Upgraded `azure-core-http-netty` dependency to `1.10.2`
-
 ## 4.3.2 (2021-08-12)
 
 ### Other Changes
@@ -163,18 +56,6 @@
 #### Dependency Updates
 - Upgraded `azure-core` dependency to `1.19.0`
 - Upgraded `azure-core-http-netty` dependency to `1.10.2`
-
-## 4.4.0-beta.1 (2021-07-09)
-
-### Features Added
-- Added support for service version `7.3-preview`.
-- Added support for requesting a desired amount of randomly generated bytes from a Managed HSM.
-
-### Other Changes
-
-#### Dependency Updates
-- Upgraded `azure-core` dependency to `1.18.0`
-- Upgraded `azure-core-http-netty` dependency to `1.10.1`
 
 ## 4.3.1 (2021-07-08)
 
