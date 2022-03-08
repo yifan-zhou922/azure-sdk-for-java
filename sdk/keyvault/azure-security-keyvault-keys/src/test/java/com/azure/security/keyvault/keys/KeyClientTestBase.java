@@ -6,11 +6,8 @@ package com.azure.security.keyvault.keys;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.exception.HttpResponseException;
 import com.azure.core.http.HttpClient;
-import com.azure.core.http.HttpMethod;
 import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.HttpPipelineBuilder;
-import com.azure.core.http.HttpRequest;
-import com.azure.core.http.HttpResponse;
 import com.azure.core.http.policy.ExponentialBackoff;
 import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
@@ -23,35 +20,26 @@ import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.http.rest.Response;
 import com.azure.core.test.TestBase;
 import com.azure.core.test.TestMode;
-import com.azure.core.util.BinaryData;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.CoreUtils;
 import com.azure.core.util.serializer.JacksonAdapter;
 import com.azure.core.util.serializer.SerializerAdapter;
-import com.azure.core.util.serializer.SerializerEncoding;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.security.keyvault.keys.implementation.KeyVaultCredentialPolicy;
 import com.azure.security.keyvault.keys.models.CreateKeyOptions;
 import com.azure.security.keyvault.keys.models.CreateOctKeyOptions;
 import com.azure.security.keyvault.keys.models.CreateRsaKeyOptions;
-import com.azure.security.keyvault.keys.models.KeyReleasePolicy;
-import com.azure.security.keyvault.keys.models.KeyRotationLifetimeAction;
-import com.azure.security.keyvault.keys.models.KeyRotationPolicy;
-import com.azure.security.keyvault.keys.models.KeyRotationPolicyAction;
 import com.azure.security.keyvault.keys.models.KeyType;
 import com.azure.security.keyvault.keys.models.KeyVaultKey;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.Arguments;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +50,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class KeyClientTestBase extends TestBase {
@@ -420,88 +407,6 @@ public abstract class KeyClientTestBase extends TestBase {
         testRunner.accept(keyOptions);
     }
 
-    void getRandomBytesRunner(Consumer<Integer> testRunner) {
-        int count = 12;
-
-        testRunner.accept(count);
-    }
-
-    @Test
-    public abstract void releaseKey(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
-    void releaseKeyRunner(BiConsumer<CreateRsaKeyOptions, String> testRunner) {
-        final String attestationUrl = Configuration.getGlobalConfiguration()
-            .get("AZURE_KEYVAULT_ATTESTATION_URL", "http://localhost:8080");
-        final String releasePolicyContents =
-            "{"
-                + "\"anyOf\": ["
-                    + "{"
-                        + "\"anyOf\": ["
-                            + "{"
-                                + "\"claim\": \"sdk-test\","
-                                + "\"condition\": \"equals\","
-                                + "\"value\": \"true\""
-                            + "}"
-                        + "],"
-                        + "\"authority\": \"" + attestationUrl + "\""
-                    + "}"
-                + "],"
-                + "\"version\": \"1.0\""
-            + "}";
-
-        final CreateRsaKeyOptions keyToRelease =
-            new CreateRsaKeyOptions(testResourceNamer.randomName("keyToRelease", 20))
-                .setKeySize(2048)
-                .setHardwareProtected(runManagedHsmTest)
-                .setReleasePolicy(new KeyReleasePolicy(BinaryData.fromString(releasePolicyContents)))
-                .setExportable(true);
-
-        testRunner.accept(keyToRelease, attestationUrl);
-    }
-
-    @Test
-    public abstract void getKeyRotationPolicyOfNonExistentKey(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
-    @Test
-    public abstract void getKeyRotationPolicyWithNoPolicySet(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
-    @Test
-    public abstract void updateGetKeyRotationPolicyWithMinimumProperties(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
-    void updateGetKeyRotationPolicyWithMinimumPropertiesRunner(BiConsumer<String, KeyRotationPolicy> testRunner) {
-        String keyName = testResourceNamer.randomName("rotateKey", 20);
-
-        KeyRotationPolicy keyRotationPolicy = new KeyRotationPolicy()
-            .setLifetimeActions(Collections.emptyList());
-
-        testRunner.accept(keyName, keyRotationPolicy);
-    }
-
-    @Test
-    public abstract void updateGetKeyRotationPolicyWithAllProperties(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
-    void updateGetKeyRotationPolicyWithAllPropertiesRunner(BiConsumer<String, KeyRotationPolicy> testRunner) {
-        String keyName = testResourceNamer.randomName("rotateKey", 20);
-
-        List<KeyRotationLifetimeAction> keyRotationLifetimeActionList = new ArrayList<>();
-        KeyRotationLifetimeAction rotateLifetimeAction = new KeyRotationLifetimeAction(KeyRotationPolicyAction.ROTATE)
-            .setTimeAfterCreate("P7D");
-        KeyRotationLifetimeAction notifyLifetimeAction = new KeyRotationLifetimeAction(KeyRotationPolicyAction.NOTIFY)
-            .setTimeBeforeExpiry("P7D");
-
-        keyRotationLifetimeActionList.add(rotateLifetimeAction);
-        keyRotationLifetimeActionList.add(notifyLifetimeAction);
-
-        KeyRotationPolicy keyRotationPolicy = new KeyRotationPolicy()
-            .setLifetimeActions(keyRotationLifetimeActionList)
-            .setExpiresIn("P6M");
-
-        testRunner.accept(keyName, keyRotationPolicy);
-    }
-
-    @Test
-    public abstract void rotateKey(HttpClient httpClient, KeyServiceVersion serviceVersion);
-
     /**
      * Helper method to verify that the Response matches what was expected. This method assumes a response status of 200.
      *
@@ -673,65 +578,5 @@ public abstract class KeyClientTestBase extends TestBase {
         }
 
         return new BigInteger(b);
-    }
-
-    public static class AttestationToken {
-        @JsonProperty
-        String token;
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
-    }
-
-    public static String getAttestationToken(String attestationUrl) throws IOException {
-        HttpClient attestationClient = HttpClient.createDefault();
-
-        try (HttpResponse httpResponse = attestationClient
-            .send(new HttpRequest(HttpMethod.GET, attestationUrl)).block()) {
-
-            assertNotNull(httpResponse);
-
-            AttestationToken attestationToken =
-                SERIALIZER_ADAPTER.deserialize(httpResponse.getBodyAsByteArray().block(),
-                    AttestationToken.class, SerializerEncoding.JSON);
-            return attestationToken.getToken();
-        }
-    }
-
-    protected void assertKeyVaultRotationPolicyEquals(KeyRotationPolicy expected, KeyRotationPolicy actual) {
-        assertTrue(expected == null && actual == null || expected != null && actual != null);
-
-        if (expected == null) {
-            return;
-        }
-
-        assertEquals(expected.getId(), actual.getId());
-        assertEquals(expected.getCreatedOn(), actual.getCreatedOn());
-        assertEquals(expected.getUpdatedOn(), actual.getUpdatedOn());
-        assertEquals(expected.getExpiresIn(), actual.getExpiresIn());
-
-        List<KeyRotationLifetimeAction> expectedLifetimeActions = expected.getLifetimeActions();
-        List<KeyRotationLifetimeAction> actualLifetimeActions = actual.getLifetimeActions();
-
-        assertTrue(expectedLifetimeActions == null && actualLifetimeActions == null
-            || expectedLifetimeActions != null && actualLifetimeActions != null);
-
-        if (expectedLifetimeActions != null) {
-            assertEquals(expectedLifetimeActions.size(), actualLifetimeActions.size());
-
-            for (int i = 0; i < expectedLifetimeActions.size(); i++) {
-                KeyRotationLifetimeAction expectedLifetimeAction = expectedLifetimeActions.get(i);
-                KeyRotationLifetimeAction actualLifetimeAction = actualLifetimeActions.get(i);
-
-                assertEquals(expectedLifetimeAction.getAction(), actualLifetimeAction.getAction());
-                assertEquals(expectedLifetimeAction.getTimeAfterCreate(), actualLifetimeAction.getTimeAfterCreate());
-                assertEquals(expectedLifetimeAction.getTimeBeforeExpiry(), actualLifetimeAction.getTimeBeforeExpiry());
-            }
-        }
     }
 }

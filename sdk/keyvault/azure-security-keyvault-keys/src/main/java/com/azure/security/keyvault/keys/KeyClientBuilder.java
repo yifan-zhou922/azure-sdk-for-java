@@ -4,9 +4,6 @@
 package com.azure.security.keyvault.keys;
 
 import com.azure.core.annotation.ServiceClientBuilder;
-import com.azure.core.client.traits.ConfigurationTrait;
-import com.azure.core.client.traits.HttpTrait;
-import com.azure.core.client.traits.TokenCredentialTrait;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpHeader;
@@ -20,14 +17,11 @@ import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.HttpLoggingPolicy;
 import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.http.policy.HttpPolicyProviders;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.util.ClientOptions;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.CoreUtils;
-import com.azure.core.util.HttpClientOptions;
-import com.azure.core.util.builder.ClientBuilderUtil;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.security.keyvault.keys.implementation.KeyVaultCredentialPolicy;
 import com.azure.security.keyvault.keys.models.KeyVaultKeyIdentifier;
@@ -102,10 +96,7 @@ import java.util.Map;
  * @see KeyClient
  */
 @ServiceClientBuilder(serviceClients = KeyClient.class)
-public final class KeyClientBuilder implements
-    TokenCredentialTrait<KeyClientBuilder>,
-    HttpTrait<KeyClientBuilder>,
-    ConfigurationTrait<KeyClientBuilder> {
+public final class KeyClientBuilder {
     private final ClientLogger logger = new ClientLogger(KeyClientBuilder.class);
     // This is properties file's name.
     private static final String AZURE_KEY_VAULT_KEYS = "azure-key-vault-keys.properties";
@@ -122,7 +113,6 @@ public final class KeyClientBuilder implements
     private HttpClient httpClient;
     private HttpLogOptions httpLogOptions;
     private RetryPolicy retryPolicy;
-    private RetryOptions retryOptions;
     private Configuration configuration;
     private KeyServiceVersion version;
     private ClientOptions clientOptions;
@@ -131,6 +121,7 @@ public final class KeyClientBuilder implements
      * The constructor with defaults.
      */
     public KeyClientBuilder() {
+        retryPolicy = new RetryPolicy();
         httpLogOptions = new HttpLogOptions();
         perCallPolicies = new ArrayList<>();
         perRetryPolicies = new ArrayList<>();
@@ -151,8 +142,6 @@ public final class KeyClientBuilder implements
      *
      * @throws IllegalStateException If {@link KeyClientBuilder#credential(TokenCredential)} or
      * {@link KeyClientBuilder#vaultUrl(String)} have not been set.
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     * and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public KeyClient buildClient() {
         return new KeyClient(buildAsyncClient());
@@ -172,8 +161,6 @@ public final class KeyClientBuilder implements
      *
      * @throws IllegalStateException If {@link KeyClientBuilder#credential(TokenCredential)} or
      * {@link KeyClientBuilder#vaultUrl(String)} have not been set.
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     * and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public KeyAsyncClient buildAsyncClient() {
         Configuration buildConfiguration =
@@ -221,7 +208,7 @@ public final class KeyClientBuilder implements
         HttpPolicyProviders.addBeforeRetryPolicies(policies);
 
         // Add retry policy.
-        policies.add(ClientBuilderUtil.validateAndGetRetryPolicy(retryPolicy, retryOptions));
+        policies.add(retryPolicy == null ? new RetryPolicy() : retryPolicy);
 
         policies.add(new KeyVaultCredentialPolicy(credential));
         // Add per retry additional policies.
@@ -265,17 +252,14 @@ public final class KeyClientBuilder implements
     }
 
     /**
-     * Sets the {@link TokenCredential} used to authorize requests sent to the service. Refer to the Azure SDK for Java
-     * <a href="https://aka.ms/azsdk/java/docs/identity">identity and authentication</a>
-     * documentation for more details on proper usage of the {@link TokenCredential} type.
+     * Sets the credential to use when authenticating HTTP requests.
      *
-     * @param credential {@link TokenCredential} used to authorize requests sent to the service.
+     * @param credential The credential to use for authenticating HTTP requests.
      *
      * @return The updated {@link KeyClientBuilder} object.
      *
      * @throws NullPointerException If {@code credential} is {@code null}.
      */
-    @Override
     public KeyClientBuilder credential(TokenCredential credential) {
         if (credential == null) {
             throw logger.logExceptionAsError(new NullPointerException("'credential' cannot be null."));
@@ -287,21 +271,14 @@ public final class KeyClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpLogOptions logging configuration} to use when sending and receiving requests to and from
-     * the service. If a {@code logLevel} is not provided, default value of {@link HttpLogDetailLevel#NONE} is set.
+     * Sets the logging configuration for HTTP requests and responses.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
+     * <p> If logLevel is not provided, default value of {@link HttpLogDetailLevel#NONE} is set.</p>
      *
-     * @param logOptions The {@link HttpLogOptions logging configuration} to use when sending and receiving requests to
-     * and from the service.
+     * @param logOptions The logging configuration to use when sending and receiving HTTP requests/responses.
+     *
      * @return The updated {@link KeyClientBuilder} object.
      */
-    @Override
     public KeyClientBuilder httpLogOptions(HttpLogOptions logOptions) {
         httpLogOptions = logOptions;
 
@@ -309,21 +286,15 @@ public final class KeyClientBuilder implements
     }
 
     /**
-     * Adds a {@link HttpPipelinePolicy pipeline policy} to apply on each request sent.
+     * Adds a policy to the set of existing policies that are executed after {@link KeyAsyncClient} and {@link
+     * KeyClient} required policies.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
+     * @param policy The {@link HttpPipelinePolicy policy} to be added.
      *
-     * @param policy A {@link HttpPipelinePolicy pipeline policy}.
      * @return The updated {@link KeyClientBuilder} object.
      *
      * @throws NullPointerException If {@code policy} is {@code null}.
      */
-    @Override
     public KeyClientBuilder addPolicy(HttpPipelinePolicy policy) {
         if (policy == null) {
             throw logger.logExceptionAsError(new NullPointerException("'policy' cannot be null."));
@@ -339,19 +310,12 @@ public final class KeyClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpClient} to use for sending and receiving requests to and from the service.
+     * Sets the HTTP client to use for sending and receiving requests to and from the service.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
+     * @param client The HTTP client to use for requests.
      *
-     * @param client The {@link HttpClient} to use for requests.
      * @return The updated {@link KeyClientBuilder} object.
      */
-    @Override
     public KeyClientBuilder httpClient(HttpClient client) {
         this.httpClient = client;
 
@@ -359,22 +323,15 @@ public final class KeyClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpPipeline} to use for the service client.
+     * Sets the HTTP pipeline to use for the service client.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     * <p>
-     * The {@link #vaultUrl(String) vaultUrl} is not ignored when
-     * {@code pipeline} is set.
+     * If {@code pipeline} is set, all other settings are ignored, aside from
+     * {@link KeyClientBuilder#vaultUrl(String) vaultUrl} to build {@link KeyClient} or {@link KeyAsyncClient}.
      *
-     * @param pipeline {@link HttpPipeline} to use for sending service requests and receiving responses.
+     * @param pipeline The HTTP pipeline to use for sending service requests and receiving responses.
+     *
      * @return The updated {@link KeyClientBuilder} object.
      */
-    @Override
     public KeyClientBuilder pipeline(HttpPipeline pipeline) {
         this.pipeline = pipeline;
 
@@ -408,7 +365,6 @@ public final class KeyClientBuilder implements
      *
      * @return The updated {@link KeyClientBuilder} object.
      */
-    @Override
     public KeyClientBuilder configuration(Configuration configuration) {
         this.configuration = configuration;
 
@@ -419,8 +375,6 @@ public final class KeyClientBuilder implements
      * Sets the {@link RetryPolicy} that is used when each request is sent.
      *
      * The default retry policy will be used in the pipeline, if not provided.
-     *
-     * Setting this is mutually exclusive with using {@link #retryOptions(RetryOptions)}.
      *
      * @param retryPolicy user's retry policy applied to each request.
      *
@@ -433,45 +387,17 @@ public final class KeyClientBuilder implements
     }
 
     /**
-     * Sets the {@link RetryOptions} for all the requests made through the client.
+     * Sets the {@link ClientOptions} which enables various options to be set on the client. For example setting an
+     * {@code applicationId} using {@link ClientOptions#setApplicationId(String)} to configure
+     * the {@link UserAgentPolicy} for telemetry/monitoring purposes.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryPolicy(RetryPolicy)}.
+     * <p>More About <a href="https://azure.github.io/azure-sdk/general_azurecore.html#telemetry-policy">Azure Core:
+     * Telemetry policy</a>
      *
-     * @param retryOptions The {@link RetryOptions} to use for all the requests made through the client.
+     * @param clientOptions the {@link ClientOptions} to be set on the client.
+     *
      * @return The updated {@link KeyClientBuilder} object.
      */
-    @Override
-    public KeyClientBuilder retryOptions(RetryOptions retryOptions) {
-        this.retryOptions = retryOptions;
-        return this;
-    }
-
-    /**
-     * Allows for setting common properties such as application ID, headers, proxy configuration, etc. Note that it is
-     * recommended that this method be called with an instance of the {@link HttpClientOptions}
-     * class (a subclass of the {@link ClientOptions} base class). The HttpClientOptions subclass provides more
-     * configuration options suitable for HTTP clients, which is applicable for any class that implements this HttpTrait
-     * interface.
-     *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param clientOptions A configured instance of {@link HttpClientOptions}.
-     * @see HttpClientOptions
-     * @return The updated {@link KeyClientBuilder} object.
-     */
-    @Override
     public KeyClientBuilder clientOptions(ClientOptions clientOptions) {
         this.clientOptions = clientOptions;
 

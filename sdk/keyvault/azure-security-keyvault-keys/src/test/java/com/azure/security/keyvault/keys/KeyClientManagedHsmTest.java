@@ -106,28 +106,4 @@ public class KeyClientManagedHsmTest extends KeyClientTest implements KeyClientM
         createOctKeyRunner(64, (createOctKeyOptions) ->
             assertThrows(ResourceModifiedException.class, () -> client.createOctKey(createOctKeyOptions)));
     }
-
-    /**
-     * Tests that random bytes can be retrieved from a Managed HSM.
-     */
-    @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
-    @MethodSource("getTestParameters")
-    public void getRandomBytes(HttpClient httpClient, KeyServiceVersion serviceVersion) {
-        createKeyClient(httpClient, serviceVersion);
-        getRandomBytesRunner((count) -> {
-            byte[] randomBytes = client.getRandomBytes(count);
-
-            assertEquals(count, randomBytes.length);
-        });
-    }
-
-    /**
-     * Tests that an existing key can be released.
-     */
-    @Override
-    @ParameterizedTest(name = DISPLAY_NAME_WITH_ARGUMENTS)
-    @MethodSource("getTestParameters")
-    public void releaseKey(HttpClient httpClient, KeyServiceVersion serviceVersion) {
-        super.releaseKey(httpClient, serviceVersion);
-    }
 }

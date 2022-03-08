@@ -141,37 +141,8 @@ public class CreateOctKeyOptions extends CreateKeyOptions {
      *
      * @return The updated {@link CreateOctKeyOptions} object.
      */
-    @Override
     public CreateOctKeyOptions setEnabled(Boolean enabled) {
         super.setEnabled(enabled);
-
-        return this;
-    }
-
-    /**
-     * Set a flag that indicates if the private key can be exported.
-     *
-     * @param exportable A flag that indicates if the private key can be exported.
-     *
-     * @return The updated {@link CreateOctKeyOptions} object.
-     */
-    @Override
-    public CreateOctKeyOptions setExportable(Boolean exportable) {
-        super.setExportable(exportable);
-
-        return this;
-    }
-
-    /**
-     * Set the policy rules under which the key can be exported.
-     *
-     * @param releasePolicy The policy rules to set.
-     *
-     * @return The updated {@link CreateOctKeyOptions} object.
-     */
-    @Override
-    public CreateOctKeyOptions setReleasePolicy(KeyReleasePolicy releasePolicy) {
-        super.setReleasePolicy(releasePolicy);
 
         return this;
     }

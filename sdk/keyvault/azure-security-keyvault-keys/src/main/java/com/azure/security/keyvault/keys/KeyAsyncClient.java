@@ -16,17 +16,12 @@ import com.azure.core.http.rest.Response;
 import com.azure.core.http.rest.RestProxy;
 import com.azure.core.http.rest.SimpleResponse;
 import com.azure.core.util.Context;
-import com.azure.core.util.CoreUtils;
 import com.azure.core.util.FluxUtil;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.core.util.polling.LongRunningOperationStatus;
 import com.azure.core.util.polling.PollResponse;
 import com.azure.core.util.polling.PollerFlux;
 import com.azure.core.util.polling.PollingContext;
-import com.azure.security.keyvault.keys.cryptography.CryptographyAsyncClient;
-import com.azure.security.keyvault.keys.cryptography.CryptographyClientBuilder;
-import com.azure.security.keyvault.keys.cryptography.CryptographyServiceVersion;
-import com.azure.security.keyvault.keys.implementation.models.GetRandomBytesRequest;
 import com.azure.security.keyvault.keys.models.CreateEcKeyOptions;
 import com.azure.security.keyvault.keys.models.CreateKeyOptions;
 import com.azure.security.keyvault.keys.models.CreateOctKeyOptions;
@@ -37,11 +32,8 @@ import com.azure.security.keyvault.keys.models.JsonWebKey;
 import com.azure.security.keyvault.keys.models.KeyCurveName;
 import com.azure.security.keyvault.keys.models.KeyOperation;
 import com.azure.security.keyvault.keys.models.KeyProperties;
-import com.azure.security.keyvault.keys.models.KeyRotationPolicy;
 import com.azure.security.keyvault.keys.models.KeyType;
 import com.azure.security.keyvault.keys.models.KeyVaultKey;
-import com.azure.security.keyvault.keys.models.ReleaseKeyOptions;
-import com.azure.security.keyvault.keys.models.ReleaseKeyResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -58,9 +50,9 @@ import static com.azure.core.util.tracing.Tracer.AZ_TRACING_NAMESPACE_KEY;
 
 /**
  * The {@link KeyAsyncClient} provides asynchronous methods to manage {@link KeyVaultKey keys} in the Azure Key Vault.
- * The client supports creating, retrieving, updating, deleting, purging, backing up, restoring, listing, releasing
- * and rotating the {@link KeyVaultKey keys}. The client also supports listing {@link DeletedKey deleted keys} for a
- * soft-delete enabled Azure Key Vault.
+ * The client supports creating, retrieving, updating, deleting, purging, backing up, restoring and listing the
+ * {@link KeyVaultKey keys}. The client also supports listing {@link DeletedKey deleted keys} for a soft-delete
+ * enabled Azure Key Vault.
  *
  * <p><strong>Samples to construct the async client</strong></p>
  * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.instantiation -->
@@ -143,71 +135,6 @@ public final class KeyAsyncClient {
      */
     Duration getDefaultPollingInterval() {
         return DEFAULT_POLLING_INTERVAL;
-    }
-
-    /**
-     * Creates a {@link CryptographyAsyncClient} for the latest version of a given key.
-     *
-     * <p>To ensure correct behavior when performing operations such as {@code Decrypt}, {@code Unwrap} and
-     * {@code Verify}, it is recommended to use a {@link CryptographyAsyncClient} created for the specific key
-     * version that was used for the corresponding inverse operation: {@code Encrypt}, {@code Wrap}, or
-     * {@code Sign}, respectively.</p>
-     *
-     * <p>You can provide a key version either via {@link KeyAsyncClient#getCryptographyAsyncClient(String, String)} or
-     * by ensuring it is included in the {@code keyIdentifier} passed to
-     * {@link CryptographyClientBuilder#keyIdentifier(String)} before building a client.</p>
-     *
-     * @param keyName The name of the key.
-     *
-     * @return An instance of {@link CryptographyAsyncClient} associated with the latest version of a key with the
-     * provided name.
-     *
-     * @throws IllegalArgumentException If {@code keyName} is {@code null} or empty.
-     */
-    public CryptographyAsyncClient getCryptographyAsyncClient(String keyName) {
-        return getCryptographyClientBuilder(keyName, null).buildAsyncClient();
-    }
-
-    /**
-     * Creates a {@link CryptographyAsyncClient} for a given key version.
-     *
-     * @param keyName The name of the key.
-     * @param keyVersion The key version.
-     *
-     * @return An instance of {@link CryptographyAsyncClient} associated with a key with the provided name and version.
-     * If {@code keyVersion} is {@code null} or empty, the client will use the latest version of the key.
-     *
-     * @throws IllegalArgumentException If {@code keyName} is {@code null} or empty.
-     */
-    public CryptographyAsyncClient getCryptographyAsyncClient(String keyName, String keyVersion) {
-        return getCryptographyClientBuilder(keyName, keyVersion).buildAsyncClient();
-    }
-
-    CryptographyClientBuilder getCryptographyClientBuilder(String keyName, String keyVersion) {
-        if (CoreUtils.isNullOrEmpty(keyName)) {
-            throw logger.logExceptionAsError(new IllegalArgumentException("'keyName' cannot be null or empty."));
-        }
-
-        return new CryptographyClientBuilder()
-            .keyIdentifier(generateKeyId(keyName, keyVersion))
-            .pipeline(pipeline)
-            .serviceVersion(CryptographyServiceVersion.valueOf(keyServiceVersion.name()));
-    }
-
-    String generateKeyId(String keyName, String keyVersion) {
-        StringBuilder stringBuilder = new StringBuilder(vaultUrl);
-
-        if (!vaultUrl.endsWith("/")) {
-            stringBuilder.append("/");
-        }
-
-        stringBuilder.append("keys/").append(keyName);
-
-        if (!CoreUtils.isNullOrEmpty(keyVersion)) {
-            stringBuilder.append("/").append(keyVersion);
-        }
-
-        return stringBuilder.toString();
     }
 
     /**
@@ -366,8 +293,7 @@ public final class KeyAsyncClient {
             .setKty(createKeyOptions.getKeyType())
             .setKeyOps(createKeyOptions.getKeyOperations())
             .setKeyAttributes(new KeyRequestAttributes(createKeyOptions))
-            .setTags(createKeyOptions.getTags())
-            .setReleasePolicy(createKeyOptions.getReleasePolicy());
+            .setTags(createKeyOptions.getTags());
 
         return service.createKey(vaultUrl, createKeyOptions.getName(), keyServiceVersion.getVersion(), ACCEPT_LANGUAGE,
                 parameters, CONTENT_TYPE_HEADER_VALUE, context.addData(AZ_TRACING_NAMESPACE_KEY,
@@ -492,8 +418,7 @@ public final class KeyAsyncClient {
             .setKeyOps(createRsaKeyOptions.getKeyOperations())
             .setKeyAttributes(new KeyRequestAttributes(createRsaKeyOptions))
             .setPublicExponent(createRsaKeyOptions.getPublicExponent())
-            .setTags(createRsaKeyOptions.getTags())
-            .setReleasePolicy(createRsaKeyOptions.getReleasePolicy());
+            .setTags(createRsaKeyOptions.getTags());
 
         return service.createKey(vaultUrl, createRsaKeyOptions.getName(), keyServiceVersion.getVersion(),
                 ACCEPT_LANGUAGE, parameters, CONTENT_TYPE_HEADER_VALUE, context.addData(AZ_TRACING_NAMESPACE_KEY,
@@ -619,8 +544,7 @@ public final class KeyAsyncClient {
             .setCurve(createEcKeyOptions.getCurveName())
             .setKeyOps(createEcKeyOptions.getKeyOperations())
             .setKeyAttributes(new KeyRequestAttributes(createEcKeyOptions))
-            .setTags(createEcKeyOptions.getTags())
-            .setReleasePolicy(createEcKeyOptions.getReleasePolicy());
+            .setTags(createEcKeyOptions.getTags());
 
         return service.createKey(vaultUrl, createEcKeyOptions.getName(), keyServiceVersion.getVersion(),
                 ACCEPT_LANGUAGE, parameters, CONTENT_TYPE_HEADER_VALUE, context.addData(AZ_TRACING_NAMESPACE_KEY,
@@ -739,8 +663,7 @@ public final class KeyAsyncClient {
             .setKeySize(createOctKeyOptions.getKeySize())
             .setKeyOps(createOctKeyOptions.getKeyOperations())
             .setKeyAttributes(new KeyRequestAttributes(createOctKeyOptions))
-            .setTags(createOctKeyOptions.getTags())
-            .setReleasePolicy(createOctKeyOptions.getReleasePolicy());
+            .setTags(createOctKeyOptions.getTags());
 
         return service.createKey(vaultUrl, createOctKeyOptions.getName(), keyServiceVersion.getVersion(),
                  ACCEPT_LANGUAGE, parameters, CONTENT_TYPE_HEADER_VALUE, context.addData(AZ_TRACING_NAMESPACE_KEY,
@@ -892,8 +815,7 @@ public final class KeyAsyncClient {
             .setKey(importKeyOptions.getKey())
             .setHsm(importKeyOptions.isHardwareProtected())
             .setKeyAttributes(new KeyRequestAttributes(importKeyOptions))
-            .setTags(importKeyOptions.getTags())
-            .setReleasePolicy(importKeyOptions.getReleasePolicy());
+            .setTags(importKeyOptions.getTags());
 
         return service.importKey(vaultUrl, importKeyOptions.getName(), keyServiceVersion.getVersion(), ACCEPT_LANGUAGE,
                 parameters, CONTENT_TYPE_HEADER_VALUE, context.addData(AZ_TRACING_NAMESPACE_KEY,
@@ -1131,8 +1053,7 @@ public final class KeyAsyncClient {
         context = context == null ? Context.NONE : context;
         KeyRequestParameters parameters = new KeyRequestParameters()
             .setTags(keyProperties.getTags())
-            .setKeyAttributes(new KeyRequestAttributes(keyProperties))
-            .setReleasePolicy(keyProperties.getReleasePolicy());
+            .setKeyAttributes(new KeyRequestAttributes(keyProperties));
 
         if (keyOperations.length > 0) {
             parameters.setKeyOps(Arrays.asList(keyOperations));
@@ -1872,513 +1793,6 @@ public final class KeyAsyncClient {
                     logger.warning("Failed to list next key versions page - Page {} ", continuationToken, error));
         } catch (RuntimeException ex) {
             return monoError(logger, ex);
-        }
-    }
-
-    /**
-     * Get the requested number of bytes containing random values from a managed HSM.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Gets a number of bytes containing random values from a Managed HSM. Prints out the retrieved bytes in
-     * base64Url format.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.getRandomBytes#int -->
-     * <pre>
-     * int amount = 16;
-     * keyAsyncClient.getRandomBytes&#40;amount&#41;
-     *     .subscribe&#40;randomBytes -&gt;
-     *         System.out.printf&#40;&quot;Retrieved %d random bytes: %s%n&quot;, amount, Arrays.toString&#40;randomBytes&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.getRandomBytes#int -->
-     *
-     * @param count The requested number of random bytes.
-     *
-     * @return A {@link Mono} containing the requested number of bytes containing random values from a managed HSM.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<byte[]> getRandomBytes(int count) {
-        try {
-            return withContext(context -> getRandomBytesWithResponse(count, context)
-                .flatMap(FluxUtil::toMono));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Get the requested number of bytes containing random values from a managed HSM.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Gets a number of bytes containing random values from a Managed HSM. Prints out the
-     * {@link Response HTTP Response} details and the retrieved bytes in base64Url format.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.getRandomBytesWithResponse#int -->
-     * <pre>
-     * int amountOfBytes = 16;
-     * keyAsyncClient.getRandomBytesWithResponse&#40;amountOfBytes&#41;.subscribe&#40;response -&gt;
-     *     System.out.printf&#40;&quot;Response received successfully with status code: %d. Retrieved %d random bytes: %s%n&quot;,
-     *         response.getStatusCode&#40;&#41;, amountOfBytes, Arrays.toString&#40;response.getValue&#40;&#41;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.getRandomBytesWithResponse#int -->
-     *
-     * @param count The requested number of random bytes.
-     *
-     * @return A {@link Mono} containing the {@link Response HTTP response} for this operation and the requested number
-     * of bytes containing random values from a managed HSM.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<Response<byte[]>> getRandomBytesWithResponse(int count) {
-        try {
-            return withContext(context -> getRandomBytesWithResponse(count, context));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    Mono<Response<byte[]>> getRandomBytesWithResponse(int count, Context context) {
-        try {
-            return service.getRandomBytes(vaultUrl, keyServiceVersion.getVersion(),
-                    new GetRandomBytesRequest().setCount(count), "application/json",
-                    context.addData(AZ_TRACING_NAMESPACE_KEY, KEYVAULT_TRACING_NAMESPACE_VALUE))
-                .doOnRequest(ignored -> logger.verbose("Getting {} random bytes.", count))
-                .doOnSuccess(response -> logger.verbose("Got {} random bytes.", count))
-                .doOnError(error -> logger.warning("Failed to get random bytes - {}", error))
-                .map(response -> new SimpleResponse<>(response, response.getValue().getBytes()));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Releases the latest version of a {@link KeyVaultKey key}.
-     *
-     * <p>The {@link KeyVaultKey key} must be exportable. This operation requires the {@code keys/release} permission.
-     * </p>
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Releases a {@link KeyVaultKey key}. Subscribes to the call asynchronously and prints out the signed object
-     * that contains the {@link KeyVaultKey released key} when a response has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyClient.releaseKey#String-String -->
-     * <pre>
-     * String targetAttestationToken = &quot;someAttestationToken&quot;;
-     * ReleaseKeyResult releaseKeyResult = keyClient.releaseKey&#40;&quot;keyName&quot;, targetAttestationToken&#41;;
-     *
-     * System.out.printf&#40;&quot;Signed object containing released key: %s%n&quot;, releaseKeyResult&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyClient.releaseKey#String-String -->
-     *
-     * @param name The name of the {@link KeyVaultKey key} to release.
-     * @param targetAttestationToken The attestation assertion for the target of the {@link KeyVaultKey key} release.
-     *
-     * @return A {@link Mono} containing the {@link ReleaseKeyResult} containing the released key.
-     *
-     * @throws IllegalArgumentException If {@code name} or {@code targetAttestationToken} are {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<ReleaseKeyResult> releaseKey(String name, String targetAttestationToken) {
-        try {
-            return releaseKeyWithResponse(name, "", targetAttestationToken, new ReleaseKeyOptions())
-                .flatMap(FluxUtil::toMono);
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Releases a key.
-     *
-     * <p>The key must be exportable. This operation requires the 'keys/release' permission.</p>
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Releases a {@link KeyVaultKey key}. Subscribes to the call asynchronously and prints out the signed object
-     * that contains the {@link KeyVaultKey released key} when a response has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.releaseKey#String-String-String -->
-     * <pre>
-     * String myKeyVersion = &quot;6A385B124DEF4096AF1361A85B16C204&quot;;
-     * String myTargetAttestationToken = &quot;someAttestationToken&quot;;
-     *
-     * keyAsyncClient.releaseKey&#40;&quot;keyName&quot;, myKeyVersion, myTargetAttestationToken&#41;
-     *     .subscribe&#40;releaseKeyResult -&gt;
-     *         System.out.printf&#40;&quot;Signed object containing released key: %s%n&quot;, releaseKeyResult.getValue&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.releaseKey#String-String-String -->
-     *
-     * @param name The name of the {@link KeyVaultKey key} to release.
-     * @param version The version of the key to retrieve. If this is empty or {@code null}, this call is equivalent to
-     * calling {@link KeyAsyncClient#releaseKey(String, String)}, with the latest key version being released.
-     * @param targetAttestationToken The attestation assertion for the target of the key release.
-     *
-     * @return A {@link Mono} containing the {@link ReleaseKeyResult} containing the released key.
-     *
-     * @throws IllegalArgumentException If {@code name} or {@code targetAttestationToken} are {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<ReleaseKeyResult> releaseKey(String name, String version, String targetAttestationToken) {
-        try {
-            return releaseKeyWithResponse(name, version, targetAttestationToken, new ReleaseKeyOptions())
-                .flatMap(FluxUtil::toMono);
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Releases a key.
-     *
-     * <p>The key must be exportable. This operation requires the 'keys/release' permission.</p>
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Releases a {@link KeyVaultKey key}. Subscribes to the call asynchronously and prints out the
-     * {@link Response HTTP Response} details and the signed object that contains the {@link KeyVaultKey released key}
-     * when a response has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.releaseKeyWithResponse#String-String-String-ReleaseKeyOptions -->
-     * <pre>
-     * String releaseKeyVersion = &quot;6A385B124DEF4096AF1361A85B16C204&quot;;
-     * String someTargetAttestationToken = &quot;someAttestationToken&quot;;
-     * ReleaseKeyOptions releaseKeyOptions = new ReleaseKeyOptions&#40;&#41;
-     *     .setAlgorithm&#40;KeyExportEncryptionAlgorithm.RSA_AES_KEY_WRAP_256&#41;
-     *     .setNonce&#40;&quot;someNonce&quot;&#41;;
-     *
-     * keyAsyncClient.releaseKeyWithResponse&#40;&quot;keyName&quot;, releaseKeyVersion, someTargetAttestationToken,
-     *         releaseKeyOptions&#41;
-     *     .subscribe&#40;releaseKeyResponse -&gt;
-     *         System.out.printf&#40;&quot;Response received successfully with status code: %d. Signed object containing&quot;
-     *                 + &quot;released key: %s%n&quot;, releaseKeyResponse.getStatusCode&#40;&#41;,
-     *             releaseKeyResponse.getValue&#40;&#41;.getValue&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.releaseKeyWithResponse#String-String-String-ReleaseKeyOptions -->
-     *
-     * @param name The name of the key to release.
-     * @param version The version of the key to retrieve. If this is empty or {@code null}, this call is equivalent to
-     * calling {@link KeyAsyncClient#releaseKey(String, String)}, with the latest key version being released.
-     * @param targetAttestationToken The attestation assertion for the target of the key release.
-     * @param releaseKeyOptions Additional {@link ReleaseKeyOptions options} for releasing a {@link KeyVaultKey key}.
-     *
-     * @return A {@link Mono} containing the {@link Response HTTP response} for this operation and the
-     * {@link ReleaseKeyResult} containing the released key.
-     *
-     * @throws IllegalArgumentException If {@code name} or {@code targetAttestationToken} are {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<Response<ReleaseKeyResult>> releaseKeyWithResponse(String name, String version,
-                                                                   String targetAttestationToken,
-                                                                   ReleaseKeyOptions releaseKeyOptions) {
-        try {
-            return withContext(context ->
-                releaseKeyWithResponse(name, version, targetAttestationToken, releaseKeyOptions, context));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    Mono<Response<ReleaseKeyResult>> releaseKeyWithResponse(String name, String version, String targetAttestationToken,
-                                                            ReleaseKeyOptions releaseKeyOptions, Context context) {
-        try {
-            if (CoreUtils.isNullOrEmpty(name)) {
-                return monoError(logger, new IllegalArgumentException("'name' cannot be null or empty"));
-            }
-
-            if (CoreUtils.isNullOrEmpty(targetAttestationToken)) {
-                return monoError(logger,
-                    new IllegalArgumentException("'targetAttestationToken' cannot be null or empty"));
-            }
-
-            releaseKeyOptions = releaseKeyOptions == null ? new ReleaseKeyOptions() : releaseKeyOptions;
-
-            KeyReleaseParameters keyReleaseParameters = new KeyReleaseParameters()
-                .setTargetAttestationToken(targetAttestationToken)
-                .setAlgorithm(releaseKeyOptions.getAlgorithm())
-                .setNonce(releaseKeyOptions.getNonce());
-
-            return service.release(vaultUrl, name, version, keyServiceVersion.getVersion(), keyReleaseParameters,
-                    "application/json", context.addData(AZ_TRACING_NAMESPACE_KEY, KEYVAULT_TRACING_NAMESPACE_VALUE))
-                .doOnRequest(ignored -> logger.verbose("Releasing key with name %s and version %s.", name, version))
-                .doOnSuccess(response -> logger.verbose("Released key with name %s and version %s.", name, version))
-                .doOnError(error -> logger.warning("Failed to release key - {}", error));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Rotates a {@link KeyVaultKey key}. The rotate key operation will do so based on
-     * {@link KeyRotationPolicy key's rotation policy}. This operation requires the {@code keys/rotate} permission.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Rotates a {@link KeyVaultKey key}. Prints out {@link KeyVaultKey rotated key} details.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.rotateKey#String -->
-     * <pre>
-     * keyAsyncClient.rotateKey&#40;&quot;keyName&quot;&#41;
-     *     .subscribe&#40;key -&gt;
-     *         System.out.printf&#40;&quot;Rotated key with name: %s and version:%s%n&quot;, key.getName&#40;&#41;,
-     *             key.getProperties&#40;&#41;.getVersion&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.rotateKey#String -->
-     *
-     * @param name The name of {@link KeyVaultKey key} to be rotated. The system will generate a new version in the
-     * specified {@link KeyVaultKey key}.
-     *
-     * @return The new version of the rotated {@link KeyVaultKey key}.
-     *
-     * @throws IllegalArgumentException If {@code name} is {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<KeyVaultKey> rotateKey(String name) {
-        try {
-            return rotateKeyWithResponse(name).flatMap(FluxUtil::toMono);
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Rotates a {@link KeyVaultKey key}. The rotate key operation will do so based on
-     * {@link KeyRotationPolicy key's rotation policy}. This operation requires the {@code keys/rotate} permission.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Rotates a {@link KeyVaultKey key}. Subscribes to the call asynchronously and prints out the
-     * {@link Response HTTP Response} and {@link KeyVaultKey rotated key} details when a response has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.rotateKeyWithResponse#String -->
-     * <pre>
-     * keyAsyncClient.rotateKeyWithResponse&#40;&quot;keyName&quot;&#41;
-     *     .subscribe&#40;rotateKeyResponse -&gt;
-     *         System.out.printf&#40;&quot;Response received successfully with status code: %d. Rotated key with name: %s and&quot;
-     *                 + &quot;version: %s%n&quot;, rotateKeyResponse.getStatusCode&#40;&#41;, rotateKeyResponse.getValue&#40;&#41;.getName&#40;&#41;,
-     *             rotateKeyResponse.getValue&#40;&#41;.getProperties&#40;&#41;.getVersion&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.rotateKeyWithResponse#String -->
-     *
-     * @param name The name of {@link KeyVaultKey key} to be rotated. The system will generate a new version in the
-     * specified {@link KeyVaultKey key}.
-     *
-     * @return A {@link Mono} containing the {@link Response HTTP response} for this operation and the new version of
-     * the rotated {@link KeyVaultKey key}.
-     *
-     * @throws IllegalArgumentException If {@code name} is {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<Response<KeyVaultKey>> rotateKeyWithResponse(String name) {
-        try {
-            return withContext(context -> rotateKeyWithResponse(name, context));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    Mono<Response<KeyVaultKey>> rotateKeyWithResponse(String name, Context context) {
-        try {
-            if (CoreUtils.isNullOrEmpty(name)) {
-                return monoError(logger, new IllegalArgumentException("'name' cannot be null or empty"));
-            }
-
-            return service.rotateKey(vaultUrl, name, keyServiceVersion.getVersion(), "application/json",
-                    context.addData(AZ_TRACING_NAMESPACE_KEY, KEYVAULT_TRACING_NAMESPACE_VALUE))
-                .doOnRequest(ignored -> logger.verbose("Rotating key with name %s.", name))
-                .doOnSuccess(response -> logger.verbose("Rotated key with name %s.", name))
-                .doOnError(error -> logger.warning("Failed to rotate key - {}", error));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Gets the {@link KeyRotationPolicy} for the {@link KeyVaultKey key} with the provided name. This operation
-     * requires the {@code keys/get} permission.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Retrieves the {@link KeyRotationPolicy rotation policy} of a given {@link KeyVaultKey key}. Subscribes to the
-     * call asynchronously and prints out the {@link KeyRotationPolicy rotation policy key} details when a response
-     * has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.getKeyRotationPolicy#String -->
-     * <pre>
-     * keyAsyncClient.getKeyRotationPolicy&#40;&quot;keyName&quot;&#41;
-     *     .subscribe&#40;keyRotationPolicy -&gt;
-     *         System.out.printf&#40;&quot;Retrieved key rotation policy with id: %s%n&quot;, keyRotationPolicy.getId&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.getKeyRotationPolicy#String -->
-     *
-     * @param keyName The name of the {@link KeyVaultKey key}.
-     *
-     * @return A {@link Mono} containing the {@link KeyRotationPolicy} for the key.
-     *
-     * @throws IllegalArgumentException If {@code name} is {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<KeyRotationPolicy> getKeyRotationPolicy(String keyName) {
-        try {
-            return getKeyRotationPolicyWithResponse(keyName).flatMap(FluxUtil::toMono);
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Gets the {@link KeyRotationPolicy} for the {@link KeyVaultKey key} with the provided name. This operation
-     * requires the {@code keys/get} permission.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Retrieves the {@link KeyRotationPolicy rotation policy} of a given {@link KeyVaultKey key}. Subscribes to the
-     * call asynchronously and prints out the {@link Response HTTP Response} and
-     * {@link KeyRotationPolicy rotation policy key} details when a response has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.getKeyRotationPolicyWithResponse#String -->
-     * <pre>
-     * keyAsyncClient.getKeyRotationPolicyWithResponse&#40;&quot;keyName&quot;&#41;
-     *     .subscribe&#40;getKeyRotationPolicyResponse -&gt;
-     *         System.out.printf&#40;&quot;Response received successfully with status code: %d. Retrieved key rotation policy&quot;
-     *             + &quot;with id: %s%n&quot;, getKeyRotationPolicyResponse.getStatusCode&#40;&#41;,
-     *             getKeyRotationPolicyResponse.getValue&#40;&#41;.getId&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.getKeyRotationPolicyWithResponse#String -->
-     *
-     * @param keyName The name of the {@link KeyVaultKey key}.
-     *
-     * @return A {@link Mono} containing the {@link Response HTTP response} for this operation and the
-     * {@link KeyRotationPolicy} for the key.
-     *
-     * @throws IllegalArgumentException If {@code name} is {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<Response<KeyRotationPolicy>> getKeyRotationPolicyWithResponse(String keyName) {
-        try {
-            return withContext(context -> getKeyRotationPolicyWithResponse(keyName, context));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    Mono<Response<KeyRotationPolicy>> getKeyRotationPolicyWithResponse(String keyName, Context context) {
-        try {
-            if (CoreUtils.isNullOrEmpty(keyName)) {
-                return monoError(logger, new IllegalArgumentException("'keyName' cannot be null or empty"));
-            }
-
-            return service.getKeyRotationPolicy(vaultUrl, keyName, keyServiceVersion.getVersion(), "application/json",
-                    context.addData(AZ_TRACING_NAMESPACE_KEY, KEYVAULT_TRACING_NAMESPACE_VALUE))
-                .doOnRequest(ignored -> logger.verbose("Retrieving key rotation policy for key with name.", keyName))
-                .doOnSuccess(response -> logger.verbose("Retrieved key rotation policy for key with name.", keyName))
-                .doOnError(error -> logger.warning("Failed to retrieve key rotation policy - {}", error));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Updates the {@link KeyRotationPolicy} of the key with the provided name. This operation requires the
-     * {@code keys/update} permission.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Updates the {@link KeyRotationPolicy rotation policy} of a given {@link KeyVaultKey key}. Subscribes to the
-     * call asynchronously and prints out the {@link KeyRotationPolicy rotation policy key} details when a response
-     * has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.updateKeyRotationPolicy#String-KeyRotationPolicy -->
-     * <pre>
-     * List&lt;KeyRotationLifetimeAction&gt; lifetimeActions = new ArrayList&lt;&gt;&#40;&#41;;
-     * KeyRotationLifetimeAction rotateLifetimeAction = new KeyRotationLifetimeAction&#40;KeyRotationPolicyAction.ROTATE&#41;
-     *     .setTimeAfterCreate&#40;&quot;P90D&quot;&#41;;
-     * KeyRotationLifetimeAction notifyLifetimeAction = new KeyRotationLifetimeAction&#40;KeyRotationPolicyAction.NOTIFY&#41;
-     *     .setTimeBeforeExpiry&#40;&quot;P45D&quot;&#41;;
-     *
-     * lifetimeActions.add&#40;rotateLifetimeAction&#41;;
-     * lifetimeActions.add&#40;notifyLifetimeAction&#41;;
-     *
-     * KeyRotationPolicy keyRotationPolicy = new KeyRotationPolicy&#40;&#41;
-     *     .setLifetimeActions&#40;lifetimeActions&#41;
-     *     .setExpiresIn&#40;&quot;P6M&quot;&#41;;
-     *
-     * keyAsyncClient.updateKeyRotationPolicy&#40;&quot;keyName&quot;, keyRotationPolicy&#41;
-     *     .subscribe&#40;updatedPolicy -&gt;
-     *         System.out.printf&#40;&quot;Updated key rotation policy with id: %s%n&quot;, updatedPolicy.getId&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.updateKeyRotationPolicy#String-KeyRotationPolicy -->
-     *
-     * @param keyName The name of the {@link KeyVaultKey key}.
-     * @param keyRotationPolicy The {@link KeyRotationPolicy} for the key.
-     *
-     * @return A {@link Mono} containing the {@link KeyRotationPolicy} for the key.
-     *
-     * @throws IllegalArgumentException If {@code name} is {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<KeyRotationPolicy> updateKeyRotationPolicy(String keyName, KeyRotationPolicy keyRotationPolicy) {
-        try {
-            return updateKeyRotationPolicyWithResponse(keyName, keyRotationPolicy).flatMap(FluxUtil::toMono);
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    /**
-     * Updates the {@link KeyRotationPolicy} of the key with the provided name. This operation requires the
-     * {@code keys/update} permission.
-     *
-     * <p><strong>Code Samples</strong></p>
-     * <p>Updates the {@link KeyRotationPolicy rotation policy} of a given {@link KeyVaultKey key}. Subscribes to the
-     * call asynchronously and prints out the {@link Response HTTP Response} and
-     * {@link KeyRotationPolicy rotation policy key} details when a response has been received.</p>
-     * <!-- src_embed com.azure.security.keyvault.keys.KeyAsyncClient.updateKeyRotationPolicyWithResponse#String-KeyRotationPolicy -->
-     * <pre>
-     * List&lt;KeyRotationLifetimeAction&gt; myLifetimeActions = new ArrayList&lt;&gt;&#40;&#41;;
-     * KeyRotationLifetimeAction myRotateLifetimeAction = new KeyRotationLifetimeAction&#40;KeyRotationPolicyAction.ROTATE&#41;
-     *     .setTimeAfterCreate&#40;&quot;P90D&quot;&#41;;
-     * KeyRotationLifetimeAction myNotifyLifetimeAction = new KeyRotationLifetimeAction&#40;KeyRotationPolicyAction.NOTIFY&#41;
-     *     .setTimeBeforeExpiry&#40;&quot;P45D&quot;&#41;;
-     *
-     * myLifetimeActions.add&#40;myRotateLifetimeAction&#41;;
-     * myLifetimeActions.add&#40;myNotifyLifetimeAction&#41;;
-     *
-     * KeyRotationPolicy myKeyRotationPolicy = new KeyRotationPolicy&#40;&#41;
-     *     .setLifetimeActions&#40;myLifetimeActions&#41;
-     *     .setExpiresIn&#40;&quot;P6M&quot;&#41;;
-     *
-     * keyAsyncClient.updateKeyRotationPolicyWithResponse&#40;&quot;keyName&quot;, myKeyRotationPolicy&#41;
-     *     .subscribe&#40;myUpdatedPolicyResponse -&gt;
-     *         System.out.printf&#40;&quot;Response received successfully with status code: %d. Updated key rotation policy&quot;
-     *             + &quot;with id: %s%n&quot;, myUpdatedPolicyResponse.getStatusCode&#40;&#41;,
-     *             myUpdatedPolicyResponse.getValue&#40;&#41;.getId&#40;&#41;&#41;&#41;;
-     * </pre>
-     * <!-- end com.azure.security.keyvault.keys.KeyAsyncClient.updateKeyRotationPolicyWithResponse#String-KeyRotationPolicy -->
-     *
-     * @param keyName The name of the {@link KeyVaultKey key}.
-     * @param keyRotationPolicy The {@link KeyRotationPolicy} for the key.
-     *
-     * @return A {@link Mono} containing the {@link Response HTTP response} for this operation and the
-     * {@link KeyRotationPolicy} for the key.
-     *
-     * @throws IllegalArgumentException If {@code name} is {@code null} or empty.
-     * @throws ResourceNotFoundException If the {@link KeyVaultKey key} for the provided {@code name} does not exist.
-     */
-    @ServiceMethod(returns = ReturnType.SINGLE)
-    public Mono<Response<KeyRotationPolicy>> updateKeyRotationPolicyWithResponse(String keyName,
-                                                                                 KeyRotationPolicy keyRotationPolicy) {
-        try {
-            return withContext(context ->
-                updateKeyRotationPolicyWithResponse(keyName, keyRotationPolicy, context));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
-        }
-    }
-
-    Mono<Response<KeyRotationPolicy>> updateKeyRotationPolicyWithResponse(String keyName,
-                                                                          KeyRotationPolicy keyRotationPolicy,
-                                                                          Context context) {
-        try {
-            if (CoreUtils.isNullOrEmpty(keyName)) {
-                return monoError(logger, new IllegalArgumentException("'keyName' cannot be null or empty"));
-            }
-
-            return service.updateKeyRotationPolicy(vaultUrl, keyName, keyServiceVersion.getVersion(), keyRotationPolicy,
-                    "application/json", context.addData(AZ_TRACING_NAMESPACE_KEY, KEYVAULT_TRACING_NAMESPACE_VALUE))
-                .doOnRequest(ignored -> logger.verbose("Updating key rotation policy for key with name.", keyName))
-                .doOnSuccess(response -> logger.verbose("Updated key rotation policy for key with name.", keyName))
-                .doOnError(error -> logger.warning("Failed to retrieve key rotation policy - {}", error));
-        } catch (RuntimeException e) {
-            return monoError(logger, e);
         }
     }
 }

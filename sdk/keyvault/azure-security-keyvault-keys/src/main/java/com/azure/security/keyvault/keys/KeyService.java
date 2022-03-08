@@ -11,9 +11,9 @@ import com.azure.core.annotation.HeaderParam;
 import com.azure.core.annotation.Host;
 import com.azure.core.annotation.HostParam;
 import com.azure.core.annotation.Patch;
+import com.azure.core.annotation.PathParam;
 import com.azure.core.annotation.Post;
 import com.azure.core.annotation.Put;
-import com.azure.core.annotation.PathParam;
 import com.azure.core.annotation.QueryParam;
 import com.azure.core.annotation.ReturnValueWireType;
 import com.azure.core.annotation.ServiceInterface;
@@ -24,15 +24,11 @@ import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.core.http.rest.PagedResponse;
 import com.azure.core.http.rest.Response;
 import com.azure.core.util.Context;
-import com.azure.security.keyvault.keys.implementation.models.DeletedKeyPage;
-import com.azure.security.keyvault.keys.implementation.models.KeyPropertiesPage;
-import com.azure.security.keyvault.keys.implementation.models.GetRandomBytesRequest;
-import com.azure.security.keyvault.keys.implementation.models.RandomBytes;
+import com.azure.security.keyvault.keys.implementation.DeletedKeyPage;
+import com.azure.security.keyvault.keys.implementation.KeyPropertiesPage;
 import com.azure.security.keyvault.keys.models.DeletedKey;
-import com.azure.security.keyvault.keys.models.ReleaseKeyResult;
-import com.azure.security.keyvault.keys.models.KeyVaultKey;
 import com.azure.security.keyvault.keys.models.KeyProperties;
-import com.azure.security.keyvault.keys.models.KeyRotationPolicy;
+import com.azure.security.keyvault.keys.models.KeyVaultKey;
 import reactor.core.publisher.Mono;
 
 /**
@@ -242,56 +238,4 @@ interface KeyService {
                                                   @HeaderParam("accept-language") String acceptLanguage,
                                                   @HeaderParam("Content-Type") String type,
                                                   Context context);
-
-    @Post("rng")
-    @ExpectedResponses({200})
-    @UnexpectedResponseExceptionType(HttpResponseException.class)
-    Mono<Response<RandomBytes>> getRandomBytes(@HostParam("url") String url,
-                                               @QueryParam("api-version") String apiVersion,
-                                               @BodyParam("application/json") GetRandomBytesRequest parameters,
-                                               @HeaderParam("Accept") String accept,
-                                               Context context);
-
-    @Post("keys/{key-name}/{key-version}/release")
-    @ExpectedResponses({200})
-    @UnexpectedResponseExceptionType(code = {404}, value = ResourceNotFoundException.class)
-    @UnexpectedResponseExceptionType(HttpResponseException.class)
-    Mono<Response<ReleaseKeyResult>> release(@HostParam("url") String url,
-                                             @PathParam("key-name") String keyName,
-                                             @PathParam("key-version") String keyVersion,
-                                             @QueryParam("api-version") String apiVersion,
-                                             @BodyParam("application/json") KeyReleaseParameters parameters,
-                                             @HeaderParam("Accept") String accept,
-                                             Context context);
-
-    @Post("/keys/{key-name}/rotate")
-    @ExpectedResponses({200})
-    @UnexpectedResponseExceptionType(code = {404}, value = ResourceNotFoundException.class)
-    @UnexpectedResponseExceptionType(HttpResponseException.class)
-    Mono<Response<KeyVaultKey>> rotateKey(@HostParam("url") String url,
-                                          @PathParam("key-name") String keyName,
-                                          @QueryParam("api-version") String apiVersion,
-                                          @HeaderParam("Accept") String accept,
-                                          Context context);
-
-    @Get("/keys/{key-name}/rotationpolicy")
-    @ExpectedResponses({200})
-    @UnexpectedResponseExceptionType(code = {404}, value = ResourceNotFoundException.class)
-    @UnexpectedResponseExceptionType(HttpResponseException.class)
-    Mono<Response<KeyRotationPolicy>> getKeyRotationPolicy(@HostParam("url") String url,
-                                                           @PathParam("key-name") String keyName,
-                                                           @QueryParam("api-version") String apiVersion,
-                                                           @HeaderParam("Accept") String accept,
-                                                           Context context);
-
-    @Put("/keys/{key-name}/rotationpolicy")
-    @ExpectedResponses({200})
-    @UnexpectedResponseExceptionType(code = {404}, value = ResourceNotFoundException.class)
-    @UnexpectedResponseExceptionType(HttpResponseException.class)
-    Mono<Response<KeyRotationPolicy>> updateKeyRotationPolicy(@HostParam("url") String url,
-                                                              @PathParam("key-name") String keyName,
-                                                              @QueryParam("api-version") String apiVersion,
-                                                              @BodyParam("application/json") KeyRotationPolicy keyRotationPolicy,
-                                                              @HeaderParam("Accept") String accept,
-                                                              Context context);
 }
