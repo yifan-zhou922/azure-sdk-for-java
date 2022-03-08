@@ -6,7 +6,6 @@ package com.azure.identity.implementation.util;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.logging.ClientLogger;
-import com.azure.core.util.logging.LogLevel;
 import com.azure.identity.CredentialUnavailableException;
 import com.azure.identity.implementation.IdentityClientOptions;
 
@@ -24,8 +23,8 @@ public final class LoggingUtil {
      * @param context the context of the getToken() request
      */
     public static void logTokenSuccess(ClientLogger logger, TokenRequestContext context) {
-        logger.log(LogLevel.INFORMATIONAL, () -> String.format(
-            "Azure Identity => getToken() result for scopes [%s]: SUCCESS", String.join(", ", context.getScopes())));
+        logger.info("Azure Identity => getToken() result for scopes [{}]: SUCCESS",
+                String.join(", ", context.getScopes()));
     }
 
     /**
