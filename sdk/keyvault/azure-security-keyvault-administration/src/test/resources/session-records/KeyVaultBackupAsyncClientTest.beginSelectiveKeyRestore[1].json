@@ -25,7 +25,7 @@
     "Exception" : null
   }, {
     "Method" : "POST",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/backup?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/backup?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -52,7 +52,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/backup/326ae18f19f843978fabbba3bb0a32ae/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/backup/326ae18f19f843978fabbba3bb0a32ae/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -78,7 +78,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/backup/326ae18f19f843978fabbba3bb0a32ae/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/backup/326ae18f19f843978fabbba3bb0a32ae/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -104,7 +104,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/backup/326ae18f19f843978fabbba3bb0a32ae/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/backup/326ae18f19f843978fabbba3bb0a32ae/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -130,7 +130,7 @@
     "Exception" : null
   }, {
     "Method" : "PUT",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/keys/backupkey872128dc/restore?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/keys/backupkey872128dc/restore?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)",
       "Content-Type" : "application/json"
@@ -157,7 +157,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -183,7 +183,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -209,7 +209,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -235,7 +235,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
@@ -261,7 +261,7 @@
     "Exception" : null
   }, {
     "Method" : "GET",
-    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.3-preview",
+    "Uri" : "https://REDACTED.managedhsm.azure.net/restore/c4e6ff5349704e8a96306d7c673e7184/pending?api-version=7.2",
     "Headers" : {
       "User-Agent" : "azsdk-java-client_name/client_version (11.0.6; Windows 10; 10.0)"
     },
