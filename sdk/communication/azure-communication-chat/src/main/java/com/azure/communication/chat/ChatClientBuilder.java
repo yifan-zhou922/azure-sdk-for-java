@@ -14,36 +14,26 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.List;
 import com.azure.core.annotation.ServiceClientBuilder;
-import com.azure.core.client.traits.ConfigurationTrait;
-import com.azure.core.client.traits.EndpointTrait;
-import com.azure.core.client.traits.HttpTrait;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.HttpPipelineBuilder;
 import com.azure.core.http.policy.BearerTokenAuthenticationPolicy;
 import com.azure.core.http.policy.CookiePolicy;
-import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.HttpLoggingPolicy;
 import com.azure.core.http.policy.RequestIdPolicy;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.util.ClientOptions;
 import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.CoreUtils;
-import com.azure.core.util.HttpClientOptions;
-import com.azure.core.util.builder.ClientBuilderUtil;
 
 /**
  * Builder for creating clients of Azure Communication Service Chat
  */
 @ServiceClientBuilder(serviceClients = {ChatAsyncClient.class, ChatClient.class})
-public final class ChatClientBuilder implements
-    ConfigurationTrait<ChatClientBuilder>,
-    EndpointTrait<ChatClientBuilder>,
-    HttpTrait<ChatClientBuilder> {
+public final class ChatClientBuilder {
 
     private String endpoint;
     private HttpClient httpClient;
@@ -53,8 +43,7 @@ public final class ChatClientBuilder implements
     private HttpPipeline httpPipeline;
     private Configuration configuration;
     private ClientOptions clientOptions;
-    private RetryPolicy retryPolicy;
-    private RetryOptions retryOptions;
+    private RetryPolicy retryPolicy = new RetryPolicy();
 
     private static final String APP_CONFIG_PROPERTIES = "azure-communication-chat.properties";
     private static final String SDK_NAME = "name";
@@ -66,26 +55,17 @@ public final class ChatClientBuilder implements
      * @param endpoint url of the service
      * @return the updated ChatClientBuilder object
      */
-    @Override
     public ChatClientBuilder endpoint(String endpoint) {
         this.endpoint = Objects.requireNonNull(endpoint, "'endpoint' cannot be null.");
         return this;
     }
 
     /**
-     * Sets the {@link HttpClient} to use for sending and receiving requests to and from the service.
+     * Set HttpClient to use
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param httpClient The {@link HttpClient} to use for requests.
+     * @param httpClient HttpClient to use
      * @return the updated ChatClientBuilder object
      */
-    @Override
     public ChatClientBuilder httpClient(HttpClient httpClient) {
         this.httpClient = Objects.requireNonNull(httpClient, "'httpClient' cannot be null.");
         return this;
@@ -104,44 +84,23 @@ public final class ChatClientBuilder implements
     }
 
     /**
-     * Allows for setting common properties such as application ID, headers, proxy configuration, etc. Note that it is
-     * recommended that this method be called with an instance of the {@link HttpClientOptions}
-     * class (a subclass of the {@link ClientOptions} base class). The HttpClientOptions subclass provides more
-     * configuration options suitable for HTTP clients, which is applicable for any class that implements this HttpTrait
-     * interface.
+     * Sets the client options such as application ID and custom headers to set on a request.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param clientOptions A configured instance of {@link HttpClientOptions}.
+     * @param clientOptions The client options.
      * @return The updated ChatClientBuilder object.
-     * @see HttpClientOptions
      */
-    @Override
     public ChatClientBuilder clientOptions(ClientOptions clientOptions) {
         this.clientOptions = clientOptions;
         return this;
     }
 
     /**
-     * Adds a {@link HttpPipelinePolicy pipeline policy} to apply on each request sent.
+     * Apply additional {@link HttpPipelinePolicy}
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param customPolicy A {@link HttpPipelinePolicy pipeline policy}.
+     * @param customPolicy HttpPipelinePolicy objects to be applied after
+     *                       AzureKeyCredentialPolicy, UserAgentPolicy, RetryPolicy, and CookiePolicy
      * @return the updated ChatClientBuilder object
-     * @throws NullPointerException If {@code pipelinePolicy} is {@code null}.
      */
-    @Override
     public ChatClientBuilder addPolicy(HttpPipelinePolicy customPolicy) {
         this.customPolicies.add(Objects.requireNonNull(customPolicy, "'customPolicy' cannot be null."));
         return this;
@@ -151,54 +110,21 @@ public final class ChatClientBuilder implements
      * Sets the {@link HttpPipelinePolicy} that will attempt to retry requests when needed.
      * <p>
      * A default retry policy will be supplied if one isn't provided.
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryOptions(RetryOptions)}.
      *
      * @param retryPolicy The {@link RetryPolicy} that will attempt to retry requests when needed.
      * @return The updated ChatClientBuilder object.
      */
     public ChatClientBuilder retryPolicy(RetryPolicy retryPolicy) {
-        this.retryPolicy = retryPolicy;
+        this.retryPolicy = Objects.requireNonNull(retryPolicy, "'retryPolicy' cannot be null.");
         return this;
     }
 
     /**
-     * Sets the {@link RetryOptions} for all the requests made through the client.
+     * Sets the {@link HttpLogOptions} for service requests.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryPolicy(RetryPolicy)}.
-     *
-     * @param retryOptions The {@link RetryOptions} to use for all the requests made through the client.
-     * @return The updated ChatClientBuilder object.
-     */
-    @Override
-    public ChatClientBuilder retryOptions(RetryOptions retryOptions) {
-        this.retryOptions = retryOptions;
-        return this;
-    }
-
-    /**
-     * Sets the {@link HttpLogOptions logging configuration} to use when sending and receiving requests to and from
-     * the service. If a {@code logLevel} is not provided, default value of {@link HttpLogDetailLevel#NONE} is set.
-     *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param logOptions The {@link HttpLogOptions logging configuration} to use when sending and receiving requests to
-     * and from the service.
+     * @param logOptions The logging configuration to use when sending and receiving HTTP requests/responses.
      * @return the updated ChatClientBuilder object
      */
-    @Override
     public ChatClientBuilder httpLogOptions(HttpLogOptions logOptions) {
         this.logOptions = Objects.requireNonNull(logOptions, "'logOptions' cannot be null.");
         return this;
@@ -223,19 +149,11 @@ public final class ChatClientBuilder implements
     /**
      * Sets the {@link HttpPipeline} to use for the service client.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
      * If {@code pipeline} is set, all other settings are ignored, aside from {@link #endpoint(String) endpoint}.
      *
-     * @param httpPipeline {@link HttpPipeline} to use for sending service requests and receiving responses.
+     * @param httpPipeline HttpPipeline to use for sending service requests and receiving responses.
      * @return the updated ChatClientBuilder object
      */
-    @Override
     public ChatClientBuilder pipeline(HttpPipeline httpPipeline) {
         this.httpPipeline = httpPipeline;
         return this;
@@ -247,7 +165,6 @@ public final class ChatClientBuilder implements
      * @param configuration Configuration store used to retrieve environment configurations.
      * @return the updated ChatClientBuilder object
      */
-    @Override
     public ChatClientBuilder configuration(Configuration configuration) {
         this.configuration = configuration;
         return this;
@@ -259,8 +176,6 @@ public final class ChatClientBuilder implements
      * Additional HttpPolicies specified by additionalPolicies will be applied after them
      *
      * @return ChatClient instance
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     * and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public ChatClient buildClient() {
         ChatAsyncClient asyncClient = buildAsyncClient();
@@ -273,8 +188,6 @@ public final class ChatClientBuilder implements
      * Additional HttpPolicies specified by additionalPolicies will be applied after them
      *
      * @return ChatAsyncClient instance
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     * and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public ChatAsyncClient buildAsyncClient() {
         AzureCommunicationChatServiceImpl internalClient = createInternalClient();
@@ -311,7 +224,7 @@ public final class ChatClientBuilder implements
         List<HttpPipelinePolicy> policies = new ArrayList<HttpPipelinePolicy>();
         policies.add(getUserAgentPolicy());
         policies.add(new RequestIdPolicy());
-        policies.add(ClientBuilderUtil.validateAndGetRetryPolicy(retryPolicy, retryOptions));
+        policies.add(this.retryPolicy);
         policies.add(new CookiePolicy());
         // auth policy is per request, should be after retry
         policies.add(authorizationPolicy);
