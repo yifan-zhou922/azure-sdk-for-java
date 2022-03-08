@@ -23,15 +23,6 @@ public final class MSIToken extends AccessToken {
     private static final ClientLogger LOGGER = new ClientLogger(MSIToken.class);
     private static final OffsetDateTime EPOCH = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
-    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss XXX")
-        .withLocale(Locale.US);
-
-    // This is the format for app service on Windows as of API version 2017-09-01.
-    // The format is changed to Unix timestamp in 2019-08-01 but this API version
-    // has not been deployed to Linux app services.
-    private static final DateTimeFormatter DTF_WINDOWS = DateTimeFormatter.ofPattern("M/d/yyyy h:mm:ss a XXX")
-        .withLocale(Locale.US);
-
     @JsonProperty(value = "token_type")
     private String tokenType;
 
@@ -68,6 +59,11 @@ public final class MSIToken extends AccessToken {
     }
 
     private static Long parseDateToEpochSeconds(String dateTime) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss XXX").withLocale(Locale.US);
+        // This is the format for app service on Windows as of API version 2017-09-01.
+        // The format is changed to Unix timestamp in 2019-08-01 but this API version
+        // has not been deployed to Linux app services.
+        DateTimeFormatter dtfWindows = DateTimeFormatter.ofPattern("M/d/yyyy h:mm:ss a XXX").withLocale(Locale.US);
         try {
             return Long.parseLong(dateTime);
         } catch (NumberFormatException e) {
@@ -75,13 +71,13 @@ public final class MSIToken extends AccessToken {
         }
 
         try {
-            return Instant.from(DTF.parse(dateTime)).getEpochSecond();
+            return Instant.from(dtf.parse(dateTime)).getEpochSecond();
         } catch (DateTimeParseException e) {
             LOGGER.verbose(e.getMessage());
         }
 
         try {
-            return Instant.from(DTF_WINDOWS.parse(dateTime)).getEpochSecond();
+            return Instant.from(dtfWindows.parse(dateTime)).getEpochSecond();
         } catch (DateTimeParseException e) {
             LOGGER.verbose(e.getMessage());
         }

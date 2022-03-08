@@ -48,10 +48,10 @@ public class PowershellManager {
 
         ProcessBuilder pb;
         if (Platform.isWindows()) {
-            pb = new ProcessBuilder("cmd.exe", "/c", "chcp", "65001", ">", "NUL", "&",
-                powershellPath, "-ExecutionPolicy", "Bypass", "-NoExit", "-NoProfile", "-Command", "-");
+            pb = new ProcessBuilder(new String[]{"cmd.exe", "/c", "chcp", "65001", ">", "NUL", "&",
+                powershellPath, "-ExecutionPolicy", "Bypass", "-NoExit", "-NoProfile", "-Command", "-"});
         } else {
-            pb = new ProcessBuilder(powershellPath, "-nologo", "-noexit", "-Command", "-");
+            pb = new ProcessBuilder(new String[]{powershellPath, "-nologo", "-noexit", "-Command", "-"});
         }
 
         pb.redirectErrorStream(true);

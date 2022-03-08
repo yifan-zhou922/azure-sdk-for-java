@@ -38,6 +38,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * This class accesses IntelliJ Azure Tools credentials cache via JNA.
@@ -52,6 +53,8 @@ public class IntelliJCacheAccessor {
     private static final ObjectMapper DONT_FAIL_ON_UNKNOWN_PROPERTIES_MAPPER = new ObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+    private static final Pattern CACHED_AUTH_RESULT_PATTERN = Pattern.compile("cachedAuthResult@");
+
     /**
      * Creates an instance of {@link IntelliJCacheAccessor}
      *
@@ -61,7 +64,7 @@ public class IntelliJCacheAccessor {
         this.keePassDatabasePath = keePassDatabasePath;
     }
 
-    private List<String> getAzureToolsForIntelliJPluginConfigPaths() {
+    private List<String> getAzureToolsforIntelliJPluginConfigPaths() {
         return Arrays.asList(Paths.get(System.getProperty("user.home"), "AzureToolsForIntelliJ").toString(),
             Paths.get(System.getProperty("user.home"), ".AzureToolsForIntelliJ").toString());
     }
@@ -85,11 +88,8 @@ public class IntelliJCacheAccessor {
                 "account", "cachedAuthResult");
 
             String jsonCred  = new String(accessor.read(), StandardCharsets.UTF_8);
-
-            // If the JSON credential begins with 'cachedAuthResult@' create a substring with 'cachedAuthResult@'
-            // removed.
             if (jsonCred.startsWith("cachedAuthResult@")) {
-                jsonCred = jsonCred.substring("cachedAuthResult@".length());
+                jsonCred = CACHED_AUTH_RESULT_PATTERN.matcher(jsonCred).replaceFirst("");
             }
 
             return DEFAULT_MAPPER.readTree(jsonCred);
@@ -236,7 +236,7 @@ public class IntelliJCacheAccessor {
      */
     public IntelliJAuthMethodDetails getAuthDetailsIfAvailable() throws IOException {
         File authFile = null;
-        for (String metadataPath : getAzureToolsForIntelliJPluginConfigPaths()) {
+        for (String metadataPath : getAzureToolsforIntelliJPluginConfigPaths()) {
             String authMethodDetailsPath =
                 Paths.get(metadataPath, "AuthMethodDetails.json").toString();
             authFile = new File(authMethodDetailsPath);
