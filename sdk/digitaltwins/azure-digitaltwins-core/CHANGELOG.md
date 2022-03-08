@@ -1,17 +1,5 @@
 # Release History
 
-## 1.2.0-beta.1 (Unreleased)
-
-### Features Added
-- Added interfaces from `com.azure.core.client.traits` to `DigitalTwinsClientBuilder`.
-- Added `retryOptions` to `DigitalTwinsClientBuilder`.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
-
 ## 1.1.6 (2022-02-11)
 
 ### Other Changes

@@ -4,10 +4,6 @@
 package com.azure.digitaltwins.core;
 
 import com.azure.core.annotation.ServiceClientBuilder;
-import com.azure.core.client.traits.ConfigurationTrait;
-import com.azure.core.client.traits.EndpointTrait;
-import com.azure.core.client.traits.HttpTrait;
-import com.azure.core.client.traits.TokenCredentialTrait;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpHeader;
@@ -18,20 +14,16 @@ import com.azure.core.http.HttpPipelinePosition;
 import com.azure.core.http.policy.AddDatePolicy;
 import com.azure.core.http.policy.AddHeadersPolicy;
 import com.azure.core.http.policy.BearerTokenAuthenticationPolicy;
-import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.HttpLoggingPolicy;
 import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.http.policy.HttpPolicyProviders;
 import com.azure.core.http.policy.RequestIdPolicy;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.util.ClientOptions;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.CoreUtils;
-import com.azure.core.util.HttpClientOptions;
-import com.azure.core.util.builder.ClientBuilderUtil;
 import com.azure.core.util.serializer.JsonSerializer;
 
 import java.time.temporal.ChronoUnit;
@@ -46,11 +38,7 @@ import java.util.Objects;
  * #buildAsyncClient() buildAsyncClient} respectively to construct an instance of the desired client.
  */
 @ServiceClientBuilder(serviceClients = {DigitalTwinsClient.class, DigitalTwinsAsyncClient.class})
-public final class DigitalTwinsClientBuilder implements
-    ConfigurationTrait<DigitalTwinsClientBuilder>,
-    EndpointTrait<DigitalTwinsClientBuilder>,
-    HttpTrait<DigitalTwinsClientBuilder>,
-    TokenCredentialTrait<DigitalTwinsClientBuilder> {
+public final class DigitalTwinsClientBuilder {
     private static final String[] ADT_PUBLIC_SCOPE = new String[]{"https://digitaltwins.azure.net" + "/.default"};
 
     // This is the name of the properties file in this repo that contains the default properties
@@ -74,7 +62,6 @@ public final class DigitalTwinsClientBuilder implements
     private HttpClient httpClient;
     private HttpLogOptions httpLogOptions;
     private RetryPolicy retryPolicy;
-    private RetryOptions retryOptions;
     private JsonSerializer jsonSerializer;
 
     // Right now, Azure Digital Twins does not send a retry-after header on its throttling messages. If it adds support later, then
@@ -106,7 +93,7 @@ public final class DigitalTwinsClientBuilder implements
         HttpClient httpClient,
         List<HttpPipelinePolicy> perCallPolicies,
         List<HttpPipelinePolicy> perRetryPolicies,
-        HttpPipelinePolicy retryPolicy,
+        RetryPolicy retryPolicy,
         Configuration configuration,
         Map<String, String> properties) {
         // Closest to API goes first, closest to wire goes last.
@@ -171,8 +158,6 @@ public final class DigitalTwinsClientBuilder implements
      * Create a {@link DigitalTwinsClient} based on the builder settings.
      *
      * @return the created synchronous DigitalTwinsClient
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     *      and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public DigitalTwinsClient buildClient() {
         return new DigitalTwinsClient(buildAsyncClient());
@@ -182,8 +167,6 @@ public final class DigitalTwinsClientBuilder implements
      * Create a {@link DigitalTwinsAsyncClient} based on the builder settings.
      *
      * @return the created asynchronous DigitalTwinsAsyncClient
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     *      and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public DigitalTwinsAsyncClient buildAsyncClient() {
         Objects.requireNonNull(tokenCredential, "'tokenCredential' cannot be null.");
@@ -201,8 +184,10 @@ public final class DigitalTwinsClientBuilder implements
         }
 
         // Default is exponential backoff
-        HttpPipelinePolicy retryPolicy = ClientBuilderUtil.validateAndGetRetryPolicy(this.retryPolicy,
-            retryOptions, DEFAULT_RETRY_POLICY);
+        RetryPolicy retryPolicy = this.retryPolicy;
+        if (retryPolicy == null) {
+            retryPolicy = DEFAULT_RETRY_POLICY;
+        }
 
         if (this.httpPipeline == null) {
             this.httpPipeline = setupPipeline(
@@ -227,21 +212,18 @@ public final class DigitalTwinsClientBuilder implements
      * @param endpoint URL of the service.
      * @return the updated DigitalTwinsClientBuilder instance for fluent building.
      */
-    @Override
     public DigitalTwinsClientBuilder endpoint(String endpoint) {
         this.endpoint = endpoint;
         return this;
     }
 
     /**
-     * Sets the {@link TokenCredential} used to authorize requests sent to the service. Refer to the Azure SDK for Java
-     * <a href="https://aka.ms/azsdk/java/docs/identity">identity and authentication</a>
-     * documentation for more details on proper usage of the {@link TokenCredential} type.
+     * Set the authentication token provider that the built client will use for all service requests. This field is
+     * mandatory to set unless you set the http pipeline directly and that set pipeline has an authentication policy configured.
      *
-     * @param tokenCredential {@link TokenCredential} used to authorize requests sent to the service.
+     * @param tokenCredential the authentication token provider.
      * @return the updated DigitalTwinsClientBuilder instance for fluent building.
      */
-    @Override
     public DigitalTwinsClientBuilder credential(TokenCredential tokenCredential) {
         this.tokenCredential = tokenCredential;
         return this;
@@ -265,60 +247,36 @@ public final class DigitalTwinsClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpClient} to use for sending and receiving requests to and from the service.
+     * Sets the {@link HttpClient} to use for sending a receiving requests to and from the service.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param httpClient The {@link HttpClient} to use for requests.
+     * @param httpClient HttpClient to use for requests.
      * @return the updated DigitalTwinsClientBuilder instance for fluent building.
      */
-    @Override
     public DigitalTwinsClientBuilder httpClient(HttpClient httpClient) {
         this.httpClient = httpClient;
         return this;
     }
 
     /**
-     * Sets the {@link HttpLogOptions logging configuration} to use when sending and receiving requests to and from
-     * the service. If a {@code logLevel} is not provided, default value of {@link HttpLogDetailLevel#NONE} is set.
+     * Sets the {@link HttpLogOptions} for service requests.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param logOptions The {@link HttpLogOptions logging configuration} to use when sending and receiving requests to
-     * and from the service.
+     * @param logOptions The logging configuration to use when sending and receiving HTTP requests/responses.
      * @return the updated DigitalTwinsClientBuilder instance for fluent building.
+     * @throws NullPointerException If {@code httpLogOptions} is {@code null}.
      */
-    @Override
     public DigitalTwinsClientBuilder httpLogOptions(HttpLogOptions logOptions) {
         this.httpLogOptions = logOptions;
         return this;
     }
 
     /**
-     * Adds a {@link HttpPipelinePolicy pipeline policy} to apply on each request sent.
+     * Adds a pipeline policy to apply on each request sent. The policy will be added after the retry policy. If
+     * the method is called multiple times, all policies will be added and their order preserved.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param pipelinePolicy A {@link HttpPipelinePolicy pipeline policy}.
+     * @param pipelinePolicy a pipeline policy
      * @return the updated DigitalTwinsClientBuilder instance for fluent building.
      * @throws NullPointerException If {@code pipelinePolicy} is {@code null}.
      */
-    @Override
     public DigitalTwinsClientBuilder addPolicy(HttpPipelinePolicy pipelinePolicy) {
         Objects.requireNonNull(pipelinePolicy, "'pipelinePolicy' cannot be null.");
 
@@ -337,10 +295,8 @@ public final class DigitalTwinsClientBuilder implements
      * The default retry policy will be used if not provided. The default retry policy is {@link RetryPolicy#RetryPolicy()}.
      * For implementing custom retry logic, see {@link RetryPolicy} as an example.
      *
-     * Setting this is mutually exclusive with using {@link #retryOptions(RetryOptions)}.
-     *
      * @param retryPolicy the retry policy applied to each request.
-     * @return the updated DigitalTwinsClientBuilder instance for fluent building.
+     * @return The updated ConfigurationClientBuilder object.
      */
     public DigitalTwinsClientBuilder retryPolicy(RetryPolicy retryPolicy) {
         this.retryPolicy = retryPolicy;
@@ -348,42 +304,13 @@ public final class DigitalTwinsClientBuilder implements
     }
 
     /**
-     * Sets the {@link RetryOptions} for all the requests made through the client.
-     *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryPolicy(RetryPolicy)}.
-     *
-     * @param retryOptions The {@link RetryOptions} to use for all the requests made through the client.
-     * @return the updated DigitalTwinsClientBuilder instance for fluent building.
-     */
-    @Override
-    public DigitalTwinsClientBuilder retryOptions(RetryOptions retryOptions) {
-        this.retryOptions = retryOptions;
-        return this;
-    }
-
-    /**
      * Sets the {@link HttpPipeline} to use for the service client.
-     *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
      * <p>
      * If {@code pipeline} is set, all other settings are ignored, aside from {@link #endpoint(String) endpoint}.
      *
-     * @param httpPipeline {@link HttpPipeline} to use for sending service requests and receiving responses.
+     * @param httpPipeline HttpPipeline to use for sending service requests and receiving responses.
      * @return the updated DigitalTwinsClientBuilder instance for fluent building.
      */
-    @Override
     public DigitalTwinsClientBuilder pipeline(HttpPipeline httpPipeline) {
         this.httpPipeline = httpPipeline;
         return this;
@@ -398,7 +325,6 @@ public final class DigitalTwinsClientBuilder implements
      * @param configuration The configuration store used to
      * @return The updated DigitalTwinsClientBuilder object for fluent building.
      */
-    @Override
     public DigitalTwinsClientBuilder configuration(Configuration configuration) {
         this.configuration = configuration;
         return this;
@@ -416,24 +342,15 @@ public final class DigitalTwinsClientBuilder implements
     }
 
     /**
-     * Allows for setting common properties such as application ID, headers, proxy configuration, etc. Note that it is
-     * recommended that this method be called with an instance of the {@link HttpClientOptions}
-     * class (a subclass of the {@link ClientOptions} base class). The HttpClientOptions subclass provides more
-     * configuration options suitable for HTTP clients, which is applicable for any class that implements this HttpTrait
-     * interface.
+     * Sets the {@link ClientOptions} which enables various options to be set on the client. For example setting an
+     * {@code applicationId} using {@link ClientOptions#setApplicationId(String)} to configure
+     * the {@link UserAgentPolicy} for telemetry/monitoring purposes.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
+     * <p>More About <a href="https://azure.github.io/azure-sdk/general_azurecore.html#telemetry-policy">Azure Core: Telemetry policy</a>
      *
-     * @param clientOptions A configured instance of {@link HttpClientOptions}.
-     * @return The updated DigitalTwinsClientBuilder object.
-     * @see HttpClientOptions
+     * @param clientOptions the {@link ClientOptions} to be set on the client.
+     * @return The updated KeyClientBuilder object.
      */
-    @Override
     public DigitalTwinsClientBuilder clientOptions(ClientOptions clientOptions) {
         this.clientOptions = clientOptions;
         return this;
