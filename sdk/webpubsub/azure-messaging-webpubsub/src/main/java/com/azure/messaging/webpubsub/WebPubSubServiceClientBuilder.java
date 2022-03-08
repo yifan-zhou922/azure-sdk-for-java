@@ -4,12 +4,6 @@
 package com.azure.messaging.webpubsub;
 
 import com.azure.core.annotation.ServiceClientBuilder;
-import com.azure.core.client.traits.AzureKeyCredentialTrait;
-import com.azure.core.client.traits.ConfigurationTrait;
-import com.azure.core.client.traits.ConnectionStringTrait;
-import com.azure.core.client.traits.EndpointTrait;
-import com.azure.core.client.traits.HttpTrait;
-import com.azure.core.client.traits.TokenCredentialTrait;
 import com.azure.core.credential.AzureKeyCredential;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
@@ -20,20 +14,16 @@ import com.azure.core.http.HttpPipelineBuilder;
 import com.azure.core.http.policy.AddHeadersPolicy;
 import com.azure.core.http.policy.BearerTokenAuthenticationPolicy;
 import com.azure.core.http.policy.CookiePolicy;
-import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.HttpLoggingPolicy;
 import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.core.http.policy.HttpPolicyProviders;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.policy.UserAgentPolicy;
 import com.azure.core.util.ClientOptions;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.CoreUtils;
-import com.azure.core.util.HttpClientOptions;
 import com.azure.core.util.UrlBuilder;
-import com.azure.core.util.builder.ClientBuilderUtil;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.messaging.webpubsub.implementation.AzureWebPubSubServiceRestApiImpl;
 
@@ -95,13 +85,7 @@ import java.util.Objects;
  * @see WebPubSubServiceClient
  */
 @ServiceClientBuilder(serviceClients = {WebPubSubServiceAsyncClient.class, WebPubSubServiceClient.class})
-public final class WebPubSubServiceClientBuilder implements
-    AzureKeyCredentialTrait<WebPubSubServiceClientBuilder>,
-    ConfigurationTrait<WebPubSubServiceClientBuilder>,
-    ConnectionStringTrait<WebPubSubServiceClientBuilder>,
-    EndpointTrait<WebPubSubServiceClientBuilder>,
-    HttpTrait<WebPubSubServiceClientBuilder>,
-    TokenCredentialTrait<WebPubSubServiceClientBuilder> {
+public final class WebPubSubServiceClientBuilder {
     private static final String WPS_DEFAULT_SCOPE = "https://webpubsub.azure.com/.default";
     private final ClientLogger logger = new ClientLogger(WebPubSubServiceClientBuilder.class);
 
@@ -125,7 +109,6 @@ public final class WebPubSubServiceClientBuilder implements
     private HttpLogOptions httpLogOptions;
     private HttpPipeline pipeline;
     private RetryPolicy retryPolicy;
-    private RetryOptions retryOptions;
     private Configuration configuration;
     private WebPubSubServiceVersion version = WebPubSubServiceVersion.getLatest();
     private String hub;
@@ -142,24 +125,15 @@ public final class WebPubSubServiceClientBuilder implements
     }
 
     /**
-     * Allows for setting common properties such as application ID, headers, proxy configuration, etc. Note that it is
-     * recommended that this method be called with an instance of the {@link HttpClientOptions}
-     * class (a subclass of the {@link ClientOptions} base class). The HttpClientOptions subclass provides more
-     * configuration options suitable for HTTP clients, which is applicable for any class that implements this HttpTrait
-     * interface.
+     * Sets the {@link ClientOptions} which enables various options to be set on the client. For example setting an
+     * {@code applicationId} using {@link ClientOptions#setApplicationId(String)} to configure
+     * the {@link UserAgentPolicy} for telemetry/monitoring purposes.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
+     * <p>More About <a href="https://azure.github.io/azure-sdk/general_azurecore.html#telemetry-policy">Azure Core: Telemetry policy</a>
      *
-     * @param clientOptions A configured instance of {@link HttpClientOptions}.
+     * @param clientOptions the {@link ClientOptions} to be set on the client.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
-     * @see HttpClientOptions
      */
-    @Override
     public WebPubSubServiceClientBuilder clientOptions(ClientOptions clientOptions) {
         this.clientOptions = clientOptions;
         return this;
@@ -172,7 +146,6 @@ public final class WebPubSubServiceClientBuilder implements
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      * @throws NullPointerException If {@code connectionString} is {@code null}.
      */
-    @Override
     public WebPubSubServiceClientBuilder connectionString(final String connectionString) {
         Objects.requireNonNull(connectionString, "'connectionString' cannot be null.");
         this.connectionString = connectionString;
@@ -187,7 +160,6 @@ public final class WebPubSubServiceClientBuilder implements
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      * @throws IllegalArgumentException if {@code endpoint} is {@code null}.
      */
-    @Override
     public WebPubSubServiceClientBuilder endpoint(final String endpoint) {
         Objects.requireNonNull(endpoint, "'endpoint' cannot be null.");
         try {
@@ -205,21 +177,17 @@ public final class WebPubSubServiceClientBuilder implements
      * @param credential AzureKeyCredential used to authenticate HTTP requests.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
-    @Override
     public WebPubSubServiceClientBuilder credential(final AzureKeyCredential credential) {
         this.credential = credential;
         return this;
     }
 
     /**
-     * Sets the {@link TokenCredential} used to authorize requests sent to the service. Refer to the Azure SDK for Java
-     * <a href="https://aka.ms/azsdk/java/docs/identity">identity and authentication</a>
-     * documentation for more details on proper usage of the {@link TokenCredential} type.
+     * Sets the {@link TokenCredential} used to authenticate HTTP requests.
      *
-     * @param credential {@link TokenCredential} used to authorize requests sent to the service.
+     * @param credential TokenCredential used to authenticate HTTP requests.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
-    @Override
     public WebPubSubServiceClientBuilder credential(final TokenCredential credential) {
         this.tokenCredential = credential;
         return this;
@@ -252,41 +220,26 @@ public final class WebPubSubServiceClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpLogOptions logging configuration} to use when sending and receiving requests to and from
-     * the service. If a {@code logLevel} is not provided, default value of {@link HttpLogDetailLevel#NONE} is set.
+     * Sets the logging configuration for HTTP requests and responses.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
+     * <p> If logLevel is not provided, default value of {@link com.azure.core.http.policy.HttpLogDetailLevel#NONE} is
+     * set.</p>
      *
-     * @param logOptions The {@link HttpLogOptions logging configuration} to use when sending and receiving requests to
-     * and from the service.
+     * @param logOptions The logging configuration to use when sending and receiving HTTP requests/responses.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
-    @Override
     public WebPubSubServiceClientBuilder httpLogOptions(final HttpLogOptions logOptions) {
         httpLogOptions = logOptions;
         return this;
     }
 
     /**
-     * Adds a {@link HttpPipelinePolicy pipeline policy} to apply on each request sent.
+     * Adds a policy to the set of existing policies that are executed after required policies.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param policy A {@link HttpPipelinePolicy pipeline policy}.
+     * @param policy The retry policy for service requests.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      * @throws NullPointerException If {@code policy} is {@code null}.
      */
-    @Override
     public WebPubSubServiceClientBuilder addPolicy(final HttpPipelinePolicy policy) {
         Objects.requireNonNull(policy);
         policies.add(policy);
@@ -294,19 +247,11 @@ public final class WebPubSubServiceClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpClient} to use for sending and receiving requests to and from the service.
+     * Sets the HTTP client to use for sending and receiving requests to and from the service.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * @param client The {@link HttpClient} to use for requests.
+     * @param client The HTTP client to use for requests.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
-    @Override
     public WebPubSubServiceClientBuilder httpClient(final HttpClient client) {
         if (this.httpClient != null && client == null) {
             logger.info("HttpClient is being set to 'null' when it was previously configured.");
@@ -317,24 +262,15 @@ public final class WebPubSubServiceClientBuilder implements
     }
 
     /**
-     * Sets the {@link HttpPipeline} to use for the service client.
+     * Sets the HTTP pipeline to use for the service client.
      *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     *
-     * <p>
      * If {@code pipeline} is set, all other settings are ignored, aside from
      * {@link WebPubSubServiceClientBuilder#connectionString(String) connectionString} to build {@link WebPubSubServiceAsyncClient} or
      * {@link WebPubSubServiceClient}.
      *
-     * @param pipeline {@link HttpPipeline} to use for sending service requests and receiving responses.
+     * @param pipeline The HTTP pipeline to use for sending service requests and receiving responses.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
-    @Override
     public WebPubSubServiceClientBuilder pipeline(final HttpPipeline pipeline) {
         if (this.pipeline != null && pipeline == null) {
             logger.info("HttpPipeline is being set to 'null' when it was previously configured.");
@@ -353,7 +289,6 @@ public final class WebPubSubServiceClientBuilder implements
      * @param configuration The configuration store used to
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
-    @Override
     public WebPubSubServiceClientBuilder configuration(final Configuration configuration) {
         this.configuration = configuration;
         return this;
@@ -362,35 +297,12 @@ public final class WebPubSubServiceClientBuilder implements
     /**
      * Sets the {@link HttpPipelinePolicy} that is used when each request is sent. The default retry policy will be
      * used if not provided.
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryOptions(RetryOptions)}.
      *
      * @param retryPolicy user's retry policy applied to each request.
      * @return The updated {@link WebPubSubServiceClientBuilder} object.
      */
     public WebPubSubServiceClientBuilder retryPolicy(final RetryPolicy retryPolicy) {
         this.retryPolicy = retryPolicy;
-        return this;
-    }
-
-    /**
-     * Sets the {@link RetryOptions} for all the requests made through the client.
-     *
-     * <p><strong>Note:</strong> It is important to understand the precedence order of the HttpTrait APIs. In
-     * particular, if a {@link HttpPipeline} is specified, this takes precedence over all other APIs in the trait, and
-     * they will be ignored. If no {@link HttpPipeline} is specified, a HTTP pipeline will be constructed internally
-     * based on the settings provided to this trait. Additionally, there may be other APIs in types that implement this
-     * trait that are also ignored if an {@link HttpPipeline} is specified, so please be sure to refer to the
-     * documentation of types that implement this trait to understand the full set of implications.</p>
-     * <p>
-     * Setting this is mutually exclusive with using {@link #retryPolicy(RetryPolicy)}.
-     *
-     * @param retryOptions The {@link RetryOptions} to use for all the requests made through the client.
-     * @return The updated {@link WebPubSubServiceClientBuilder} object.
-     */
-    @Override
-    public WebPubSubServiceClientBuilder retryOptions(RetryOptions retryOptions) {
-        this.retryOptions = retryOptions;
         return this;
     }
 
@@ -471,7 +383,7 @@ public final class WebPubSubServiceClientBuilder implements
             buildConfiguration));
         policies.add(new CookiePolicy());
         HttpPolicyProviders.addBeforeRetryPolicies(policies);
-        policies.add(ClientBuilderUtil.validateAndGetRetryPolicy(retryPolicy, retryOptions, DEFAULT_RETRY_POLICY));
+        policies.add(retryPolicy == null ? DEFAULT_RETRY_POLICY : retryPolicy);
         if (this.credential != null) {
             WebPubSubAuthenticationPolicy webPubSubAuthPolicy = new WebPubSubAuthenticationPolicy(credential);
             policies.add(webPubSubAuthPolicy);
@@ -511,8 +423,6 @@ public final class WebPubSubServiceClientBuilder implements
      * Builds an instance of WebPubSubAsyncServiceClient with the provided parameters.
      *
      * @return an instance of WebPubSubAsyncServiceClient.
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     *      and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public WebPubSubServiceAsyncClient buildAsyncClient() {
         return new WebPubSubServiceAsyncClient(buildInnerClient().getWebPubSubs(), hub, endpoint, credential, version);
@@ -522,8 +432,6 @@ public final class WebPubSubServiceClientBuilder implements
      * Builds an instance of WebPubSubServiceClient with the provided parameters.
      *
      * @return an instance of WebPubSubServiceClient.
-     * @throws IllegalStateException If both {@link #retryOptions(RetryOptions)}
-     *      and {@link #retryPolicy(RetryPolicy)} have been set.
      */
     public WebPubSubServiceClient buildClient() {
         return new WebPubSubServiceClient(buildInnerClient().getWebPubSubs(), hub, endpoint, credential, version);
