@@ -1,5 +1,15 @@
 # Release History
 
+## 12.1.5 (2022-03-08)
+
+### Other Changes
+
+#### Dependency Updates
+
+- Upgraded `azure-core` from `1.25.0` to version `1.26.0`.
+- Upgraded `azure-storage-common` from `12.14.3` to version `12.15.0-beta.1`.
+- Upgraded `azure-core-http-netty` from `1.11.7` to version `1.11.8`.
+
 ## 12.1.4 (2022-02-11)
 
 ### Other Changes
