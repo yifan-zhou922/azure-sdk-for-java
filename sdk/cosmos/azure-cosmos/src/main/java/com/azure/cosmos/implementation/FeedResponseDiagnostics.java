@@ -28,7 +28,7 @@ public class FeedResponseDiagnostics {
     private static final Logger LOGGER = LoggerFactory.getLogger(FeedResponseDiagnostics.class);
     private Map<String, QueryMetrics> queryMetricsMap;
     private QueryInfo.QueryPlanDiagnosticsContext diagnosticsContext;
-    private final List<ClientSideRequestStatistics> clientSideRequestStatisticsList;
+    private List<ClientSideRequestStatistics> clientSideRequestStatisticsList;
 
     public FeedResponseDiagnostics(Map<String, QueryMetrics> queryMetricsMap) {
         this.queryMetricsMap = queryMetricsMap;
