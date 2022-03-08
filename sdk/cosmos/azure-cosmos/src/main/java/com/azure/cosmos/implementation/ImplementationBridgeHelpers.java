@@ -219,8 +219,6 @@ public class ImplementationBridgeHelpers {
         public interface CosmosChangeFeedRequestOptionsAccessor {
             CosmosChangeFeedRequestOptions setHeader(CosmosChangeFeedRequestOptions changeFeedRequestOptions, String name, String value);
             Map<String, String> getHeader(CosmosChangeFeedRequestOptions changeFeedRequestOptions);
-            void setOperationContext(CosmosChangeFeedRequestOptions changeFeedRequestOptions, OperationContextAndListenerTuple operationContext);
-            OperationContextAndListenerTuple getOperationContext(CosmosChangeFeedRequestOptions changeFeedRequestOptions);
         }
     }
 
