@@ -1,5 +1,13 @@
 # Release History
 
+## 1.0.1 (2022-03-08)
+
+### Other Changes
+
+#### Dependency Updates
+
+- Upgraded `azure-core` from `1.25.0` to version `1.26.0`.
+
 ## 1.0.0 (2022-02-08)
 ### Breaking Changes
  * Removed `buildSigningCertificatesClient` and `buildSigningCertificatesAsyncClient` replaced
