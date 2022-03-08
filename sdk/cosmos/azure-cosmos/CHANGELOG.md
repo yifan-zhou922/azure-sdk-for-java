@@ -1,5 +1,16 @@
 ## Release History
 
+## 4.26.1 (2022-03-08)
+
+### Other Changes
+
+#### Dependency Updates
+
+- Upgraded `azure-core-http-netty` from `1.11.7` to version `1.11.8`.
+- Upgraded `micrometer-core` from `1.8.1` to version `1.8.2`.
+- Upgraded `slf4j-api` from `1.7.32` to version `1.7.33`.
+- Upgraded `azure-core` from `1.25.0` to version `1.26.0`.
+
 ### 4.26.0 (2022-02-11)
 #### Features Added
 * Added support to resume a "multi order by query" from a continuation token - See [PR 26267](https://github.com/Azure/azure-sdk-for-java/pull/26267)
