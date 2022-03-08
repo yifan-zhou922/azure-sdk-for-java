@@ -1,5 +1,14 @@
 # Release History
 
+## 1.1.5 (2022-03-08)
+
+### Other Changes
+
+#### Dependency Updates
+
+- Upgraded `azure-mixedreality-authentication` from `1.1.5` to version `1.1.6`.
+- Upgraded `azure-core` from `1.25.0` to version `1.26.0`.
+
 ## 1.1.4 (2022-02-14)
 
 ### Other Changes
