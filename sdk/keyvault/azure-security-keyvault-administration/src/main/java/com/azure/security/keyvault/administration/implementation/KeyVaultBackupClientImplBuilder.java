@@ -195,7 +195,7 @@ public final class KeyVaultBackupClientImplBuilder {
      */
     public KeyVaultBackupClientImpl buildClient() {
         if (apiVersion == null) {
-            this.apiVersion = "7.3-preview";
+            this.apiVersion = "7.2";
         }
         if (pipeline == null) {
             this.pipeline = createHttpPipeline();
