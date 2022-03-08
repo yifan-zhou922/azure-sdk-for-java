@@ -116,13 +116,13 @@ public class ThroughputControlStore {
 
             if (group.isDefault()) {
                 if (groupSet.stream().anyMatch(
-                    controlGroup -> controlGroup.isDefault() && !StringUtils.equals(group.getId(), controlGroup.getId()))) {
+                    controlGroup -> group.isDefault() && !StringUtils.equals(group.getId(), controlGroup.getId()))) {
                     throw new IllegalArgumentException("A default group already exists");
                 }
             }
 
             if (!groupSet.add(group)) {
-                logger.debug("Can not add duplicate group");
+                logger.warn("Can not add duplicate group");
                 return groupSet;
             }
 

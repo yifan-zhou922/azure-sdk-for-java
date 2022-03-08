@@ -183,9 +183,7 @@ class DocumentProducer<T extends Resource> {
                         executeRequestFuncWithRetries,
                         resourceType,
                         top,
-                        pageSize,
-                        Paginator.getPreFetchCount(cosmosQueryRequestOptions, top, pageSize)
-                )
+                        pageSize)
                 .map(rsp -> {
                     lastResponseContinuationToken = rsp.getContinuationToken();
                     this.fetchExecutionRangeAccumulator.endFetchRange(rsp.getActivityId(),

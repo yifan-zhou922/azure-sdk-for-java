@@ -35,15 +35,12 @@ public class Paginator {
         Class<T> resourceType,
         int maxPageSize) {
 
-        int top = -1;
         return getPaginatedQueryResultAsObservable(
             ModelBridgeInternal.getRequestContinuationFromQueryRequestOptions(cosmosQueryRequestOptions),
             createRequestFunc,
             executeFunc,
             resourceType,
-            top,
-            maxPageSize,
-            getPreFetchCount(cosmosQueryRequestOptions, top, maxPageSize));
+            -1, maxPageSize);
     }
 
     public static <T extends Resource> Flux<FeedResponse<T>> getPaginatedQueryResultAsObservable(
@@ -52,8 +49,7 @@ public class Paginator {
             Function<RxDocumentServiceRequest, Mono<FeedResponse<T>>> executeFunc,
             Class<T> resourceType,
             int top,
-            int maxPageSize,
-            int maxPreFetchCount) {
+            int maxPageSize) {
 
         return getPaginatedQueryResultAsObservable(
             continuationToken,
@@ -62,7 +58,6 @@ public class Paginator {
             resourceType,
             top,
             maxPageSize,
-            maxPreFetchCount,
             false);
     }
 
@@ -123,7 +118,6 @@ public class Paginator {
             Class<T> resourceType,
             int top,
             int maxPageSize,
-            int preFetchCount,
             boolean isChangeFeed) {
 
         return getPaginatedQueryResultAsObservable(
@@ -134,18 +128,6 @@ public class Paginator {
                 isChangeFeed,
                 top,
                 maxPageSize),
-                preFetchCount);
-    }
-
-    public static int getPreFetchCount(CosmosQueryRequestOptions queryOptions, int top, int maxPageSize) {
-        int maxBufferedItemCount = queryOptions != null ? queryOptions.getMaxBufferedItemCount() : 0;
-        if (maxBufferedItemCount <= 0) {
-            return Queues.XS_BUFFER_SIZE;
-        }
-        int effectivePageSize = top > 0 ?
-            Math.min(top, maxPageSize) :
-            Math.max(1, maxPageSize);
-        int prefetch = Math.max(1, maxBufferedItemCount / effectivePageSize);
-        return Math.min(prefetch, Queues.XS_BUFFER_SIZE);
+                Queues.XS_BUFFER_SIZE);
     }
 }
